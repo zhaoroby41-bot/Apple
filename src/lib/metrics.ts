@@ -260,14 +260,14 @@ function compareTotals(current: MetricTotals, previous: MetricTotals): MetricCom
   return { current, previous, delta, percent };
 }
 
-function buildTrend(metricsByAccount: Map<string, DailyMetric[]>, accounts: StoreAccount[], start: string, end: string, platformMode: "all" | "split") {
+function buildTrend(metricsByAccount: Map<string, DailyMetric[]>, accounts: StoreAccount[], start: string, end: string) {
   const rows = new Map<string, TrendPoint>();
 
   accounts.forEach((account) => {
     const metrics = metricsByAccount.get(account.id) ?? [];
     metrics.forEach((metric) => {
       if (!isWithin(metric.date, start, end)) return;
-      const platform = platformMode === "split" ? account.platform : "all";
+      const platform = account.platform;
       const key = `${metric.date}-${platform}`;
       const existing = rows.get(key) ?? {
         date: metric.date,
@@ -415,8 +415,7 @@ export function buildDashboardModel(dataset: MockDataset, filters: DashboardFilt
   const activeCount = Array.from(statusByAccount.values()).filter((status) => status !== "未活跃").length;
   const activeRate = accounts.length === 0 ? 0 : activeCount / accounts.length;
   const uniqueDealers = new Set(accounts.map((account) => account.dealerId));
-  const platformMode = filters.platform === "all" ? "split" : "all";
-  const fanTrend = buildTrend(metricsByAccount, accounts, window.currentStart, window.currentEnd, platformMode);
+  const fanTrend = buildTrend(metricsByAccount, accounts, window.currentStart, window.currentEnd);
   const engagementTrend = fanTrend;
 
   const rankingRows = accountPeriodTotals

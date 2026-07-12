@@ -247,7 +247,7 @@ h1 {
   top: 0;
   z-index: 8;
   display: grid;
-  grid-template-columns: minmax(150px, 0.8fr) minmax(150px, 0.8fr) minmax(150px, 0.8fr) minmax(260px, 1.2fr);
+  grid-template-columns: minmax(180px, 220px) minmax(180px, 220px);
   gap: 10px;
   margin: 14px 0;
   padding: 10px;

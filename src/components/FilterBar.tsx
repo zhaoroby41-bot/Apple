@@ -26,16 +26,6 @@ export function FilterBar({ dataset, filters, onChange }: FilterBarProps) {
   return (
     <section className="filter-bar" aria-label="Dashboard filters">
       <div className="filter-control">
-        <span>权限</span>
-        <SelectBox
-          items={[{ value: dataset.currentUser.role, label: dataset.currentUser.role === "apple" ? "Apple 总部" : "经销商账号" }]}
-          value={dataset.currentUser.role}
-          valueExpr="value"
-          displayExpr="label"
-          disabled
-        />
-      </div>
-      <div className="filter-control">
         <span>平台</span>
         <SelectBox
           items={platforms}
@@ -53,16 +43,6 @@ export function FilterBar({ dataset, filters, onChange }: FilterBarProps) {
           valueExpr="value"
           displayExpr="label"
           onValueChanged={(event) => onChange({ ...filters, period: event.value })}
-        />
-      </div>
-      <div className="filter-control">
-        <span>当前范围</span>
-        <SelectBox
-          items={[{ value: "tree", label: "由左侧组织树选择" }]}
-          value="tree"
-          valueExpr="value"
-          displayExpr="label"
-          disabled
         />
       </div>
     </section>
