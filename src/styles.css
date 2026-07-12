@@ -48,6 +48,12 @@ h1 {
   letter-spacing: 0;
 }
 
+.header-copy {
+  margin: 8px 0 0;
+  color: #6e6e73;
+  font-size: 14px;
+}
+
 .header-stat {
   min-width: 112px;
   padding: 14px 16px;
@@ -68,6 +74,83 @@ h1 {
   line-height: 1.1;
 }
 
+.filter-bar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(150px, 1fr)) minmax(260px, 1.4fr);
+  gap: 12px;
+  margin: 16px 0;
+  padding: 14px;
+  border: 1px solid #e8e8ed;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(18px);
+}
+
+.filter-control {
+  min-width: 0;
+}
+
+.filter-control span {
+  display: block;
+  margin: 0 0 6px;
+  color: #6e6e73;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.kpi-card {
+  min-height: 136px;
+  padding: 18px;
+  border: 1px solid #e8e8ed;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.kpi-card > span {
+  display: block;
+  color: #6e6e73;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.kpi-card strong {
+  display: block;
+  margin: 10px 0 14px;
+  font-size: 32px;
+  line-height: 1.05;
+  letter-spacing: 0;
+}
+
+.kpi-delta {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.kpi-delta.positive {
+  color: #188038;
+}
+
+.kpi-delta.negative {
+  color: #b3261e;
+}
+
+.kpi-delta.neutral {
+  color: #6e6e73;
+}
+
 @media (max-width: 760px) {
   .app-shell {
     padding: 16px;
@@ -75,5 +158,20 @@ h1 {
 
   .dashboard-header {
     grid-template-columns: 1fr;
+  }
+
+  .filter-bar,
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1180px) {
+  .filter-bar {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
