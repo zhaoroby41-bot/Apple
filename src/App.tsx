@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
+import { ActiveAccountsSection } from "./components/ActiveAccountsSection";
 import { EngagementTrendSection } from "./components/EngagementTrendSection";
 import { FilterBar } from "./components/FilterBar";
 import { FanTrendSection } from "./components/FanTrendSection";
+import { KpiManagementSection } from "./components/KpiManagementSection";
 import { KpiOverview } from "./components/KpiOverview";
 import { mockDataset } from "./data/mockData";
 import { buildDashboardModel } from "./lib/metrics";
@@ -44,6 +46,8 @@ export default function App() {
       <KpiOverview model={model} />
       <FanTrendSection model={model} />
       <EngagementTrendSection model={model} metric={engagementMetric} onMetricChange={setEngagementMetric} />
+      <ActiveAccountsSection model={model} />
+      <KpiManagementSection model={model} />
     </main>
   );
 }

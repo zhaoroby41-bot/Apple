@@ -227,6 +227,57 @@ h1 {
   margin: 0 0 12px;
 }
 
+.full-width-table {
+  padding: 14px;
+}
+
+.progress-cell {
+  display: grid;
+  grid-template-columns: minmax(72px, 1fr) 58px;
+  gap: 8px;
+  align-items: center;
+  min-width: 140px;
+}
+
+.progress-cell span {
+  color: #424245;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: right;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 54px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.status-pill.on-track {
+  color: #188038;
+  background: #e6f4ea;
+}
+
+.status-pill.watch {
+  color: #8a5a00;
+  background: #fef7e0;
+}
+
+.status-pill.at-risk {
+  color: #b3261e;
+  background: #fce8e6;
+}
+
+.table-note {
+  margin: 12px 0 0;
+  color: #6e6e73;
+  font-size: 12px;
+}
+
 @media (max-width: 760px) {
   .app-shell {
     padding: 16px;
