@@ -143,7 +143,7 @@ export function OrganizationScopeTree({ dataset, filters, onChange }: Organizati
       <div className="org-scope-header">
         <p className="eyebrow">Account Hierarchy</p>
         <h2>组织账号范围</h2>
-        <span>经销商 / 大区 / 门店</span>
+        <span>选择节点后，右侧数据即时聚合到该范围</span>
       </div>
       <TreeView
         items={tree}
