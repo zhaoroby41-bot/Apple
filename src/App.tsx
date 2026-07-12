@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
+import { EngagementTrendSection } from "./components/EngagementTrendSection";
 import { FilterBar } from "./components/FilterBar";
+import { FanTrendSection } from "./components/FanTrendSection";
 import { KpiOverview } from "./components/KpiOverview";
 import { mockDataset } from "./data/mockData";
 import { buildDashboardModel } from "./lib/metrics";
@@ -16,7 +18,7 @@ const initialFilters: DashboardFilters = {
 
 export default function App() {
   const [filters, setFilters] = useState<DashboardFilters>(initialFilters);
-  const [engagementMetric] = useState<EngagementMetricKey>("engagement");
+  const [engagementMetric, setEngagementMetric] = useState<EngagementMetricKey>("engagement");
   const model = useMemo(() => buildDashboardModel(mockDataset, filters, engagementMetric), [filters, engagementMetric]);
 
   return (
@@ -40,6 +42,8 @@ export default function App() {
       </section>
       <FilterBar dataset={mockDataset} filters={filters} onChange={setFilters} />
       <KpiOverview model={model} />
+      <FanTrendSection model={model} />
+      <EngagementTrendSection model={model} metric={engagementMetric} onMetricChange={setEngagementMetric} />
     </main>
   );
 }

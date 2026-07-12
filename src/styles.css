@@ -151,6 +151,82 @@ h1 {
   color: #6e6e73;
 }
 
+.analysis-section {
+  margin-top: 18px;
+}
+
+.section-heading {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.6fr) minmax(260px, 1fr);
+  gap: 24px;
+  align-items: end;
+  margin: 8px 0 12px;
+}
+
+.section-heading h2,
+.panel-title h3 {
+  margin: 0;
+  letter-spacing: 0;
+}
+
+.section-heading h2 {
+  font-size: 22px;
+}
+
+.section-heading p:last-child {
+  margin: 0;
+  color: #424245;
+  font-size: 14px;
+}
+
+.analysis-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(420px, 0.8fr);
+  gap: 14px;
+}
+
+.panel {
+  min-width: 0;
+  border: 1px solid #e8e8ed;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.chart-panel {
+  min-height: 410px;
+  padding: 16px;
+}
+
+.chart-panel .dxc-chart {
+  height: 372px;
+}
+
+.table-panel {
+  overflow: hidden;
+  padding: 14px;
+}
+
+.panel-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  margin: 0 0 10px;
+}
+
+.panel-title h3 {
+  font-size: 16px;
+}
+
+.panel-title span {
+  color: #6e6e73;
+  font-size: 12px;
+}
+
+.metric-switcher {
+  margin: 0 0 12px;
+}
+
 @media (max-width: 760px) {
   .app-shell {
     padding: 16px;
@@ -161,8 +237,14 @@ h1 {
   }
 
   .filter-bar,
-  .kpi-grid {
+  .kpi-grid,
+  .analysis-grid,
+  .section-heading {
     grid-template-columns: 1fr;
+  }
+
+  .chart-panel {
+    min-height: 340px;
   }
 }
 
@@ -173,5 +255,9 @@ h1 {
 
   .kpi-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .analysis-grid {
+    grid-template-columns: 1fr;
   }
 }
