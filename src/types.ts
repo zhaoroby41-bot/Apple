@@ -1,6 +1,6 @@
 export type Platform = "all" | "xiaohongshu" | "douyin";
 export type AccountPlatform = Exclude<Platform, "all">;
-export type ViewMode = "apple" | "region" | "dealer" | "store";
+export type UserRole = "apple" | "dealer";
 export type PeriodKey = "7d" | "15d" | "30d" | "3m" | "6m" | "1y";
 export type EngagementMetricKey =
   | "engagement"
@@ -25,7 +25,7 @@ export interface QuarterlyKpi {
 export interface Dealer {
   id: string;
   name: string;
-  regionId: string;
+  hasRegionLayer: boolean;
   quarterlyKpi: QuarterlyKpi;
 }
 
@@ -33,10 +33,17 @@ export interface StoreAccount {
   id: string;
   name: string;
   dealerId: string;
-  regionId: string;
+  regionId: string | null;
   platform: AccountPlatform;
   city: string;
   openDate: string;
+}
+
+export interface CurrentUser {
+  id: string;
+  name: string;
+  role: UserRole;
+  dealerId?: string;
 }
 
 export interface DailyMetric {
@@ -58,10 +65,10 @@ export interface MockDataset {
   accounts: StoreAccount[];
   dailyMetrics: DailyMetric[];
   mockToday: string;
+  currentUser: CurrentUser;
 }
 
 export interface DashboardFilters {
-  viewMode: ViewMode;
   platform: Platform;
   period: PeriodKey;
   regionId: string;

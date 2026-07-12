@@ -26,7 +26,7 @@ export function KpiManagementSection({ model }: { model: DashboardModel }) {
           <p className="eyebrow">Quarterly KPI</p>
           <h2>经销商季度 KPI 管理</h2>
         </div>
-        <p>按大区和经销商分组查看门店账号的阅读/播放、互动量和新增粉丝目标完成情况。</p>
+        <p>按经销商、经销商下属大区/未分大区、门店账号查看阅读/播放、互动量和新增粉丝目标完成情况。</p>
       </div>
       <article className="panel table-panel full-width-table">
         <DataGrid dataSource={model.kpiRows} keyExpr="id" showBorders={false} columnAutoWidth rowAlternationEnabled>
@@ -35,8 +35,8 @@ export function KpiManagementSection({ model }: { model: DashboardModel }) {
           <Grouping autoExpandAll={false} />
           <Sorting mode="multiple" />
           <Paging defaultPageSize={12} />
-          <Column dataField="region" caption="大区" groupIndex={0} />
-          <Column dataField="dealer" caption="经销商" groupIndex={1} />
+          <Column dataField="dealer" caption="经销商" groupIndex={0} />
+          <Column dataField="region" caption="大区/直营" groupIndex={1} />
           <Column dataField="account" caption="门店账号" minWidth={220} />
           <Column dataField="readsCurrent" caption="阅读/播放完成" dataType="number" format="#,##0" />
           <Column dataField="readsTarget" caption="阅读/播放目标" dataType="number" format="#,##0" />

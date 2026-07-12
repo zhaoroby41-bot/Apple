@@ -10,7 +10,7 @@ export function ActiveAccountsSection({ model }: { model: DashboardModel }) {
           <p className="eyebrow">Account Activity</p>
           <h2>活跃账号分布与排名</h2>
         </div>
-        <p>按大区和平台观察账号活跃状态，并定位本周期新增粉丝、阅读/播放和互动表现靠前的门店账号。</p>
+        <p>按经销商下属大区/未分大区与平台观察账号活跃状态，并定位本周期新增粉丝、阅读/播放和互动表现靠前的门店账号。</p>
       </div>
       <div className="analysis-grid">
         <article className="panel chart-panel">

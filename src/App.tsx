@@ -10,11 +10,10 @@ import { buildDashboardModel } from "./lib/metrics";
 import type { DashboardFilters, EngagementMetricKey } from "./types";
 
 const initialFilters: DashboardFilters = {
-  viewMode: "apple",
   platform: "all",
   period: "30d",
   regionId: "all",
-  dealerId: "all",
+  dealerId: mockDataset.currentUser.role === "dealer" && mockDataset.currentUser.dealerId ? mockDataset.currentUser.dealerId : "all",
   accountId: "all",
 };
 
@@ -32,8 +31,9 @@ export default function App() {
           </div>
           <p className="eyebrow">Apple Channel Social Intelligence</p>
           <h1>社交运营数据指挥台</h1>
-          <p className="header-copy">以 Apple 全域、区域、经销商和门店账号四层视角，持续观察小红书与抖音运营质量。</p>
+          <p className="header-copy">以角色权限限定可见数据，再沿经销商、可选大区和门店账号层级持续观察小红书与抖音运营质量。</p>
           <div className="scope-strip">
+            <span>{mockDataset.currentUser.role === "apple" ? "Apple 权限：全经销商可见" : "经销商权限：仅本经销商可见"}</span>
             <span>{model.scopeLabel}</span>
             <span>{model.dealerCount} 家经销商</span>
             <span>{model.accountCount} 个账号</span>

@@ -194,8 +194,9 @@ function isWithin(date: string, start: string, end: string) {
 
 export function filterAccounts(dataset: MockDataset, filters: DashboardFilters): StoreAccount[] {
   return dataset.accounts.filter((account) => {
+    if (dataset.currentUser.role === "dealer" && dataset.currentUser.dealerId && account.dealerId !== dataset.currentUser.dealerId) return false;
     if (filters.platform !== "all" && account.platform !== filters.platform) return false;
-    if (filters.regionId !== "all" && account.regionId !== filters.regionId) return false;
+    if (filters.regionId !== "all" && (filters.regionId === "direct" ? account.regionId !== null : account.regionId !== filters.regionId)) return false;
     if (filters.dealerId !== "all" && account.dealerId !== filters.dealerId) return false;
     if (filters.accountId !== "all" && account.id !== filters.accountId) return false;
     return true;
@@ -300,10 +301,17 @@ function getScopeLabel(dataset: MockDataset, filters: DashboardFilters) {
   const region = dataset.regions.find((item) => item.id === filters.regionId);
   const dealer = dataset.dealers.find((item) => item.id === filters.dealerId);
   const account = dataset.accounts.find((item) => item.id === filters.accountId);
-  if (filters.viewMode === "store" && account) return account.name;
-  if (filters.viewMode === "dealer" && dealer) return dealer.name;
-  if (filters.viewMode === "region" && region) return region.label;
-  return "Apple 全域";
+  if (account) return account.name;
+  if (dealer && region) return `${dealer.name} / ${region.label}`;
+  if (dealer && filters.regionId === "direct") return `${dealer.name} / 未分大区`;
+  if (dealer) return dealer.name;
+  if (region) return region.label;
+  if (filters.regionId === "direct") return "未分大区门店";
+  return dataset.currentUser.role === "apple" ? "Apple 全经销商" : "当前经销商";
+}
+
+function regionLabel(regionMap: Map<string, { label: string }>, regionId: string | null) {
+  return regionId ? regionMap.get(regionId)?.label ?? regionId : "未分大区";
 }
 
 function dealerAccountCounts(accounts: StoreAccount[]) {
@@ -354,7 +362,7 @@ function buildImpactRows(
       account: account.name,
       platform: platformLabels[account.platform],
       platformId: account.platform,
-      region: regions.get(account.regionId)?.label ?? account.regionId,
+      region: regionLabel(regions, account.regionId),
       dealer: dealers.get(account.dealerId)?.name ?? account.dealerId,
       previous,
       current,
@@ -417,7 +425,7 @@ export function buildDashboardModel(dataset: MockDataset, filters: DashboardFilt
       rank: 0,
       account: account.name,
       platform: platformLabels[account.platform],
-      region: regionMap.get(account.regionId)?.label ?? account.regionId,
+      region: regionLabel(regionMap, account.regionId),
       dealer: dealerMap.get(account.dealerId)?.name ?? account.dealerId,
       contentCount: currentTotals.contentCount,
       newFans: currentTotals.newFans,
@@ -430,7 +438,7 @@ export function buildDashboardModel(dataset: MockDataset, filters: DashboardFilt
 
   const activeDistributionMap = new Map<string, ActiveDistributionRow>();
   accounts.forEach((account) => {
-    const region = regionMap.get(account.regionId)?.label ?? account.regionId;
+    const region = regionLabel(regionMap, account.regionId);
     const platform = platformLabels[account.platform];
     const key = `${region}-${platform}`;
     const row = activeDistributionMap.get(key) ?? { key, region, platform, active: 0, lowActive: 0, inactive: 0 };
@@ -458,7 +466,7 @@ export function buildDashboardModel(dataset: MockDataset, filters: DashboardFilt
     const overallCompletion = (readsCompletion + engagementCompletion + newFansCompletion) / 3;
     return {
       id: `kpi-${account.id}`,
-      region: regionMap.get(account.regionId)?.label ?? account.regionId,
+      region: regionLabel(regionMap, account.regionId),
       dealer: dealer.name,
       account: account.name,
       readsTarget,

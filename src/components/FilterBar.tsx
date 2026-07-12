@@ -7,13 +7,6 @@ interface FilterBarProps {
   onChange: (filters: DashboardFilters) => void;
 }
 
-const viewModes = [
-  { value: "apple", label: "Apple 视角" },
-  { value: "region", label: "大区视角" },
-  { value: "dealer", label: "经销商视角" },
-  { value: "store", label: "门店视角" },
-];
-
 const platforms = [
   { value: "all", label: "全平台" },
   { value: "xiaohongshu", label: "小红书" },
@@ -30,31 +23,43 @@ const periods = [
 ];
 
 export function FilterBar({ dataset, filters, onChange }: FilterBarProps) {
-  const regionOptions = [{ id: "all", label: "全部大区" }, ...dataset.regions.map((region) => ({ id: region.id, label: region.label }))];
+  const visibleDealerIds =
+    dataset.currentUser.role === "dealer" && dataset.currentUser.dealerId ? new Set([dataset.currentUser.dealerId]) : new Set(dataset.dealers.map((dealer) => dealer.id));
+  const selectedDealer = dataset.dealers.find((dealer) => dealer.id === filters.dealerId);
+  const visibleAccounts = dataset.accounts.filter((account) => {
+    if (!visibleDealerIds.has(account.dealerId)) return false;
+    if (filters.dealerId !== "all" && account.dealerId !== filters.dealerId) return false;
+    if (filters.platform !== "all" && account.platform !== filters.platform) return false;
+    return true;
+  });
+  const regionIds = new Set(visibleAccounts.map((account) => account.regionId ?? "direct"));
+  const regionOptions =
+    selectedDealer?.hasRegionLayer === false
+      ? [{ id: "all", label: "全部门店（无大区层）" }]
+      : [
+          { id: "all", label: "全部大区/直营" },
+          ...dataset.regions.filter((region) => regionIds.has(region.id)).map((region) => ({ id: region.id, label: region.label })),
+          ...(regionIds.has("direct") ? [{ id: "direct", label: "未分大区" }] : []),
+        ];
   const dealerOptions = [
-    { id: "all", name: "全部经销商" },
-    ...dataset.dealers.filter((dealer) => filters.regionId === "all" || dealer.regionId === filters.regionId),
+    ...(dataset.currentUser.role === "apple" ? [{ id: "all", name: "全部经销商" }] : []),
+    ...dataset.dealers.filter((dealer) => visibleDealerIds.has(dealer.id)),
   ];
   const accountOptions = [
     { id: "all", name: "全部门店账号" },
-    ...dataset.accounts.filter((account) => {
-      if (filters.regionId !== "all" && account.regionId !== filters.regionId) return false;
-      if (filters.dealerId !== "all" && account.dealerId !== filters.dealerId) return false;
-      if (filters.platform !== "all" && account.platform !== filters.platform) return false;
-      return true;
-    }),
+    ...visibleAccounts.filter((account) => filters.regionId === "all" || (filters.regionId === "direct" ? account.regionId === null : account.regionId === filters.regionId)),
   ];
 
   return (
     <section className="filter-bar" aria-label="Dashboard filters">
       <div className="filter-control">
-        <span>视角</span>
+        <span>权限</span>
         <SelectBox
-          items={viewModes}
-          value={filters.viewMode}
+          items={[{ value: dataset.currentUser.role, label: dataset.currentUser.role === "apple" ? "Apple 总部" : "经销商账号" }]}
+          value={dataset.currentUser.role}
           valueExpr="value"
           displayExpr="label"
-          onValueChanged={(event) => onChange({ ...filters, viewMode: event.value })}
+          disabled
         />
       </div>
       <div className="filter-control">
@@ -96,7 +101,8 @@ export function FilterBar({ dataset, filters, onChange }: FilterBarProps) {
           valueExpr="id"
           displayExpr="name"
           searchEnabled
-          onValueChanged={(event) => onChange({ ...filters, dealerId: event.value, accountId: "all" })}
+          disabled={dataset.currentUser.role === "dealer"}
+          onValueChanged={(event) => onChange({ ...filters, dealerId: event.value, regionId: "all", accountId: "all" })}
         />
       </div>
       <div className="filter-control wide">

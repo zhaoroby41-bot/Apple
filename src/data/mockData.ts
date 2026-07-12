@@ -36,12 +36,11 @@ function createDealers(): Dealer[] {
   ];
 
   return Array.from({ length: 55 }, (_, index) => {
-    const region = regions[index % regions.length];
     const scale = 0.85 + (index % 7) * 0.08;
     return {
       id: `dealer-${index + 1}`,
-      name: `${region.label}${names[index % names.length]} ${String(index + 1).padStart(2, "0")}`,
-      regionId: region.id,
+      name: `${names[index % names.length]} ${String(index + 1).padStart(2, "0")}`,
+      hasRegionLayer: index === 0 || index % 5 !== 0,
       quarterlyKpi: {
         readsOrViews: Math.round(720000 * scale),
         engagement: Math.round(68000 * scale),
@@ -53,20 +52,46 @@ function createDealers(): Dealer[] {
 
 function createAccounts(dealers: Dealer[]): StoreAccount[] {
   const accounts: StoreAccount[] = [];
-  for (let index = 0; index < 200; index += 1) {
-    const dealer = dealers[index % dealers.length];
-    const cities = cityByRegion[dealer.regionId];
-    const platform: AccountPlatform = index % 10 < 7 ? "xiaohongshu" : "douyin";
-    accounts.push({
-      id: `account-${index + 1}`,
-      name: `${cities[index % cities.length]} Apple ${platform === "xiaohongshu" ? "小红书" : "抖音"}门店号 ${String(index + 1).padStart(3, "0")}`,
-      dealerId: dealer.id,
-      regionId: dealer.regionId,
-      platform,
-      city: cities[index % cities.length],
-      openDate: isoDateDaysBefore(mockToday, 365 + (index % 180)),
-    });
-  }
+  const accountCounts = dealers.map((_, index) => {
+    if (index === 0) return 20;
+    if (index === 1) return 12;
+    if (index === 2) return 10;
+    if (index >= 3 && index <= 12) return 5;
+    if (index >= 13 && index <= 36) return 3;
+    return 2;
+  });
+  let globalIndex = 0;
+
+  dealers.forEach((dealer, dealerIndex) => {
+    for (let localIndex = 0; localIndex < accountCounts[dealerIndex]; localIndex += 1) {
+      let region: Region | null = null;
+      if (dealer.hasRegionLayer) {
+        if (dealerIndex === 0) {
+          const firstDealerRegions = [
+            ...Array(5).fill("central"),
+            ...Array(3).fill("south"),
+            ...Array(10).fill("north"),
+            ...Array(2).fill("east"),
+          ];
+          region = regions.find((item) => item.id === firstDealerRegions[localIndex]) ?? regions[0];
+        } else {
+          region = regions[(dealerIndex + localIndex) % regions.length];
+        }
+      }
+      const cities = region ? cityByRegion[region.id] : ["直营网点", "城市旗舰店", "购物中心店", "授权体验店"];
+      const platform: AccountPlatform = globalIndex % 10 < 7 ? "xiaohongshu" : "douyin";
+      accounts.push({
+        id: `account-${globalIndex + 1}`,
+        name: `${cities[localIndex % cities.length]} Apple ${platform === "xiaohongshu" ? "小红书" : "抖音"}门店号 ${String(globalIndex + 1).padStart(3, "0")}`,
+        dealerId: dealer.id,
+        regionId: region?.id ?? null,
+        platform,
+        city: cities[localIndex % cities.length],
+        openDate: isoDateDaysBefore(mockToday, 365 + (globalIndex % 180)),
+      });
+      globalIndex += 1;
+    }
+  });
   return accounts;
 }
 
@@ -120,4 +145,9 @@ export const mockDataset: MockDataset = {
   accounts,
   dailyMetrics: createDailyMetrics(accounts),
   mockToday,
+  currentUser: {
+    id: "user-apple-ops",
+    name: "Apple 渠道运营",
+    role: "apple",
+  },
 };
