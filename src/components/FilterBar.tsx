@@ -23,33 +23,6 @@ const periods = [
 ];
 
 export function FilterBar({ dataset, filters, onChange }: FilterBarProps) {
-  const visibleDealerIds =
-    dataset.currentUser.role === "dealer" && dataset.currentUser.dealerId ? new Set([dataset.currentUser.dealerId]) : new Set(dataset.dealers.map((dealer) => dealer.id));
-  const selectedDealer = dataset.dealers.find((dealer) => dealer.id === filters.dealerId);
-  const visibleAccounts = dataset.accounts.filter((account) => {
-    if (!visibleDealerIds.has(account.dealerId)) return false;
-    if (filters.dealerId !== "all" && account.dealerId !== filters.dealerId) return false;
-    if (filters.platform !== "all" && account.platform !== filters.platform) return false;
-    return true;
-  });
-  const regionIds = new Set(visibleAccounts.map((account) => account.regionId ?? "direct"));
-  const regionOptions =
-    selectedDealer?.hasRegionLayer === false
-      ? [{ id: "all", label: "全部门店（无大区层）" }]
-      : [
-          { id: "all", label: "全部大区/直营" },
-          ...dataset.regions.filter((region) => regionIds.has(region.id)).map((region) => ({ id: region.id, label: region.label })),
-          ...(regionIds.has("direct") ? [{ id: "direct", label: "未分大区" }] : []),
-        ];
-  const dealerOptions = [
-    ...(dataset.currentUser.role === "apple" ? [{ id: "all", name: "全部经销商" }] : []),
-    ...dataset.dealers.filter((dealer) => visibleDealerIds.has(dealer.id)),
-  ];
-  const accountOptions = [
-    { id: "all", name: "全部门店账号" },
-    ...visibleAccounts.filter((account) => filters.regionId === "all" || (filters.regionId === "direct" ? account.regionId === null : account.regionId === filters.regionId)),
-  ];
-
   return (
     <section className="filter-bar" aria-label="Dashboard filters">
       <div className="filter-control">
@@ -83,37 +56,13 @@ export function FilterBar({ dataset, filters, onChange }: FilterBarProps) {
         />
       </div>
       <div className="filter-control">
-        <span>大区</span>
+        <span>当前范围</span>
         <SelectBox
-          items={regionOptions}
-          value={filters.regionId}
-          valueExpr="id"
+          items={[{ value: "tree", label: "由左侧组织树选择" }]}
+          value="tree"
+          valueExpr="value"
           displayExpr="label"
-          searchEnabled
-          onValueChanged={(event) => onChange({ ...filters, regionId: event.value, dealerId: "all", accountId: "all" })}
-        />
-      </div>
-      <div className="filter-control">
-        <span>经销商</span>
-        <SelectBox
-          items={dealerOptions}
-          value={filters.dealerId}
-          valueExpr="id"
-          displayExpr="name"
-          searchEnabled
-          disabled={dataset.currentUser.role === "dealer"}
-          onValueChanged={(event) => onChange({ ...filters, dealerId: event.value, regionId: "all", accountId: "all" })}
-        />
-      </div>
-      <div className="filter-control wide">
-        <span>门店账号</span>
-        <SelectBox
-          items={accountOptions}
-          value={filters.accountId}
-          valueExpr="id"
-          displayExpr="name"
-          searchEnabled
-          onValueChanged={(event) => onChange({ ...filters, accountId: event.value })}
+          disabled
         />
       </div>
     </section>

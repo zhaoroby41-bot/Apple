@@ -5,6 +5,7 @@ import { FilterBar } from "./components/FilterBar";
 import { FanTrendSection } from "./components/FanTrendSection";
 import { KpiManagementSection } from "./components/KpiManagementSection";
 import { KpiOverview } from "./components/KpiOverview";
+import { OrganizationScopeTree } from "./components/OrganizationScopeTree";
 import { mockDataset } from "./data/mockData";
 import { buildDashboardModel } from "./lib/metrics";
 import type { DashboardFilters, EngagementMetricKey } from "./types";
@@ -59,11 +60,16 @@ export default function App() {
         </div>
       </section>
       <FilterBar dataset={mockDataset} filters={filters} onChange={setFilters} />
-      <KpiOverview model={model} />
-      <FanTrendSection model={model} />
-      <EngagementTrendSection model={model} metric={engagementMetric} onMetricChange={setEngagementMetric} />
-      <ActiveAccountsSection model={model} />
-      <KpiManagementSection model={model} />
+      <div className="dashboard-workspace">
+        <OrganizationScopeTree dataset={mockDataset} filters={filters} onChange={setFilters} />
+        <div className="dashboard-content">
+          <KpiOverview model={model} />
+          <FanTrendSection model={model} />
+          <EngagementTrendSection model={model} metric={engagementMetric} onMetricChange={setEngagementMetric} />
+          <ActiveAccountsSection model={model} />
+          <KpiManagementSection model={model} />
+        </div>
+      </div>
     </main>
   );
 }
