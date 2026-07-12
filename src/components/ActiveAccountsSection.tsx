@@ -14,7 +14,7 @@ export function ActiveAccountsSection({ model }: { model: DashboardModel }) {
       </div>
       <div className="analysis-grid">
         <article className="panel chart-panel">
-          <Chart dataSource={model.activeDistribution} palette={["#188038", "#fbbc04", "#9aa0a6"]}>
+          <Chart dataSource={model.activeDistribution} palette={["#2f855a", "#b7791f", "#a1a1a6"]}>
             <CommonSeriesSettings argumentField="key" type="stackedbar" />
             <Series valueField="active" name="活跃" />
             <Series valueField="lowActive" name="低活跃" />

@@ -25,21 +25,37 @@ export default function App() {
 
   return (
     <main className="app-shell">
-      <section className="dashboard-header">
-        <div>
-          <p className="eyebrow">Apple Social Operations</p>
-          <h1>小红书与抖音运营数据看板</h1>
-          <p className="header-copy">
-            当前范围：{model.scopeLabel} · {model.dealerCount} 家经销商 · {model.accountCount} 个账号
-          </p>
+      <section className="dashboard-hero">
+        <div className="hero-main">
+          <div className="brand-mark" aria-hidden="true">
+            <span />
+          </div>
+          <p className="eyebrow">Apple Channel Social Intelligence</p>
+          <h1>社交运营数据指挥台</h1>
+          <p className="header-copy">以 Apple 全域、区域、经销商和门店账号四层视角，持续观察小红书与抖音运营质量。</p>
+          <div className="scope-strip">
+            <span>{model.scopeLabel}</span>
+            <span>{model.dealerCount} 家经销商</span>
+            <span>{model.accountCount} 个账号</span>
+            <span>Mock date {mockDataset.mockToday}</span>
+          </div>
         </div>
-        <div className="header-stat">
-          <span>经销商</span>
-          <strong>{mockDataset.dealers.length}</strong>
-        </div>
-        <div className="header-stat">
-          <span>门店账号</span>
-          <strong>{mockDataset.accounts.length}</strong>
+        <div className="hero-metrics" aria-label="Network summary">
+          <div className="hero-stat">
+            <span>Dealers</span>
+            <strong>{mockDataset.dealers.length}</strong>
+            <small>经销商网络</small>
+          </div>
+          <div className="hero-stat">
+            <span>Stores</span>
+            <strong>{mockDataset.accounts.length}</strong>
+            <small>门店专业号</small>
+          </div>
+          <div className="hero-stat hero-stat-wide">
+            <span>Platforms</span>
+            <strong>2</strong>
+            <small>小红书 / 抖音</small>
+          </div>
         </div>
       </section>
       <FilterBar dataset={mockDataset} filters={filters} onChange={setFilters} />

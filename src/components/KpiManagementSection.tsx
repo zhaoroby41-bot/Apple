@@ -1,7 +1,7 @@
 import DataGrid, { Column, Grouping, GroupPanel, Paging, SearchPanel, Sorting } from "devextreme-react/data-grid";
 import ProgressBar from "devextreme-react/progress-bar";
 import type { DashboardModel } from "../lib/metrics";
-import { formatNumber, formatPlainPercent } from "../lib/format";
+import { formatPlainPercent } from "../lib/format";
 
 function ProgressCell({ value }: { value: number }) {
   return (

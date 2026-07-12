@@ -44,7 +44,7 @@ export function FanTrendSection({ model }: { model: DashboardModel }) {
       </div>
       <div className="analysis-grid">
         <article className="panel chart-panel">
-          <Chart dataSource={chartRows} palette={["#0066cc", "#34a853", "#8e8e93"]}>
+          <Chart dataSource={chartRows} palette={["#0071e3", "#1d1d1f", "#8e8e93"]}>
             <CommonSeriesSettings argumentField="date" type="line" />
             {series.map((name) => (
               <Series key={name} valueField={name} name={name} />
