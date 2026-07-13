@@ -10,7 +10,7 @@ export function ActiveAccountsSection({ model }: { model: DashboardModel }) {
           <p className="eyebrow">Account Activity</p>
           <h2>活跃账号分布与排名</h2>
         </div>
-        <p>按经销商下属大区/未分大区与平台观察账号活跃状态，并定位本周期新增粉丝、阅读/播放和互动表现靠前的门店账号。</p>
+        <p>按经销商与平台观察账号活跃状态，并以经销商为单位排名本周期运营表现。</p>
       </div>
       <div className="analysis-grid">
         <article className="panel chart-panel">
@@ -33,18 +33,17 @@ export function ActiveAccountsSection({ model }: { model: DashboardModel }) {
             <span>默认按互动量排序</span>
           </div>
           <DataGrid dataSource={model.rankingRows} keyExpr="id" showBorders={false} columnAutoWidth rowAlternationEnabled>
-            <SearchPanel visible placeholder="搜索账号/经销商" />
+            <SearchPanel visible placeholder="搜索经销商" />
             <Sorting mode="multiple" />
             <Paging defaultPageSize={8} />
             <Column dataField="rank" caption="#" width={56} />
-            <Column dataField="account" caption="账号" minWidth={190} />
-            <Column dataField="platform" caption="平台" width={76} />
-            <Column dataField="region" caption="大区" width={70} />
+            <Column dataField="dealer" caption="经销商" minWidth={190} />
+            <Column dataField="accountCount" caption="账号数" dataType="number" width={82} />
+            <Column dataField="activeAccountRate" caption="活跃率" dataType="number" format="percent" width={88} />
             <Column dataField="contentCount" caption="作品" dataType="number" width={72} />
             <Column dataField="newFans" caption="新增粉丝" dataType="number" format="#,##0" />
             <Column dataField="readsOrViews" caption="阅读/播放" dataType="number" format="#,##0" />
             <Column dataField="engagement" caption="互动量" dataType="number" format="#,##0" sortOrder="desc" />
-            <Column dataField="activeStatus" caption="状态" width={86} />
           </DataGrid>
         </article>
       </div>

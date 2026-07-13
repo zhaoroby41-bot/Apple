@@ -69,20 +69,18 @@ export type ActiveStatus = "活跃" | "低活跃" | "未活跃";
 export interface RankingRow {
   id: string;
   rank: number;
-  account: string;
-  platform: string;
-  region: string;
   dealer: string;
+  accountCount: number;
+  activeAccountRate: number;
   contentCount: number;
   newFans: number;
   readsOrViews: number;
   engagement: number;
-  activeStatus: ActiveStatus;
 }
 
 export interface ActiveDistributionRow {
   key: string;
-  region: string;
+  dealer: string;
   platform: string;
   active: number;
   lowActive: number;
@@ -419,28 +417,42 @@ export function buildDashboardModel(dataset: MockDataset, filters: DashboardFilt
   const engagementTrend = fanTrend;
 
   const rankingRows = accountPeriodTotals
-    .map(({ account, currentTotals }) => ({
-      id: account.id,
-      rank: 0,
-      account: account.name,
-      platform: platformLabels[account.platform],
-      region: regionLabel(regionMap, account.regionId),
-      dealer: dealerMap.get(account.dealerId)?.name ?? account.dealerId,
-      contentCount: currentTotals.contentCount,
-      newFans: currentTotals.newFans,
-      readsOrViews: currentTotals.readsOrViews,
-      engagement: currentTotals.engagement,
-      activeStatus: statusByAccount.get(account.id) ?? "未活跃",
-    }))
+    .reduce<Map<string, RankingRow>>((rows, { account, currentTotals }) => {
+      const existing =
+        rows.get(account.dealerId) ??
+        ({
+          id: account.dealerId,
+          rank: 0,
+          dealer: dealerMap.get(account.dealerId)?.name ?? account.dealerId,
+          accountCount: 0,
+          activeAccountRate: 0,
+          contentCount: 0,
+          newFans: 0,
+          readsOrViews: 0,
+          engagement: 0,
+        } satisfies RankingRow);
+      existing.accountCount += 1;
+      existing.activeAccountRate += statusByAccount.get(account.id) === "未活跃" ? 0 : 1;
+      existing.contentCount += currentTotals.contentCount;
+      existing.newFans += currentTotals.newFans;
+      existing.readsOrViews += currentTotals.readsOrViews;
+      existing.engagement += currentTotals.engagement;
+      rows.set(account.dealerId, existing);
+      return rows;
+    }, new Map())
+    .values();
+
+  const dealerRankingRows = Array.from(rankingRows)
+    .map((row) => ({ ...row, activeAccountRate: row.accountCount === 0 ? 0 : row.activeAccountRate / row.accountCount }))
     .sort((a, b) => b.engagement - a.engagement)
     .map((row, index) => ({ ...row, rank: index + 1 }));
 
   const activeDistributionMap = new Map<string, ActiveDistributionRow>();
   accounts.forEach((account) => {
-    const region = regionLabel(regionMap, account.regionId);
+    const dealer = dealerMap.get(account.dealerId)?.name ?? account.dealerId;
     const platform = platformLabels[account.platform];
-    const key = `${region}-${platform}`;
-    const row = activeDistributionMap.get(key) ?? { key, region, platform, active: 0, lowActive: 0, inactive: 0 };
+    const key = `${dealer}-${platform}`;
+    const row = activeDistributionMap.get(key) ?? { key, dealer, platform, active: 0, lowActive: 0, inactive: 0 };
     const status = statusByAccount.get(account.id);
     if (status === "低活跃") row.lowActive += 1;
     else if (status === "活跃") row.active += 1;
@@ -502,7 +514,7 @@ export function buildDashboardModel(dataset: MockDataset, filters: DashboardFilt
     fanImpactRows: buildImpactRows(dataset, accounts, metricsByAccount, window, "fans"),
     engagementImpactRows: buildImpactRows(dataset, accounts, metricsByAccount, window, metric),
     activeDistribution: Array.from(activeDistributionMap.values()),
-    rankingRows,
+    rankingRows: dealerRankingRows,
     kpiRows,
     activeRate,
     quarterlyKpiCompletion,
