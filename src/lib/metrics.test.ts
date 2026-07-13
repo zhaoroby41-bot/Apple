@@ -70,6 +70,20 @@ describe("metrics", () => {
     expect(douyin.accountCount).toBeLessThan(all.accountCount);
   });
 
+  it("filters KPI report rows by selected platform", () => {
+    const base = { period: "30d" as const, regionId: "all", dealerId: "all", accountId: "all" };
+    const xiaohongshu = buildDashboardModel(mockDataset, { ...base, platform: "xiaohongshu" }, "engagement", "2026Q3");
+    const douyin = buildDashboardModel(mockDataset, { ...base, platform: "douyin" }, "engagement", "2026Q3");
+
+    expect(xiaohongshu.kpiRows.reduce((sum, row) => sum + row.accountCount, 0)).toBe(
+      mockDataset.accounts.filter((account) => account.platform === "xiaohongshu").length,
+    );
+    expect(douyin.kpiRows.reduce((sum, row) => sum + row.accountCount, 0)).toBe(
+      mockDataset.accounts.filter((account) => account.platform === "douyin").length,
+    );
+    expect(douyin.kpiRows.length).toBeLessThan(xiaohongshu.kpiRows.length);
+  });
+
   it("models varied account activity instead of every account active", () => {
     const model = buildDashboardModel(
       mockDataset,

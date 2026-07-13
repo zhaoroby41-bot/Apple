@@ -48,7 +48,7 @@ export default function App() {
         <button type="button" className={page === "overview" ? "active" : ""} onClick={() => setPage("overview")}>运营总览</button>
         <button type="button" className={page === "kpi" ? "active" : ""} onClick={() => setPage("kpi")}>季度 KPI 报表</button>
       </nav>
-      <FilterBar dataset={mockDataset} filters={filters} onChange={setFilters} showPeriod={page === "overview"} />
+      {page === "overview" ? <FilterBar dataset={mockDataset} filters={filters} onChange={setFilters} /> : null}
       <div className={`dashboard-workspace ${isScopeCollapsed ? "dashboard-workspace-collapsed" : ""}`}>
         <OrganizationScopeTree
           dataset={mockDataset}
@@ -66,7 +66,14 @@ export default function App() {
               <ActiveAccountsSection model={model} />
             </>
           ) : (
-            <KpiManagementSection model={model} quarter={kpiQuarter} onQuarterChange={setKpiQuarter} />
+            <KpiManagementSection
+              dataset={mockDataset}
+              model={model}
+              platform={filters.platform}
+              onPlatformChange={(platform) => setFilters({ ...filters, platform, dealerId: "all", regionId: "all", accountId: "all" })}
+              quarter={kpiQuarter}
+              onQuarterChange={setKpiQuarter}
+            />
           )}
         </div>
       </div>
