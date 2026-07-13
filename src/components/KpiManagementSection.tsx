@@ -9,7 +9,7 @@ import DataGrid, {
   Summary,
   TotalItem,
 } from "devextreme-react/data-grid";
-import ProgressBar from "devextreme-react/progress-bar";
+import type { CSSProperties } from "react";
 import type { DashboardModel, KpiRow } from "../lib/metrics";
 import { formatNumber, formatPlainPercent } from "../lib/format";
 
@@ -30,12 +30,30 @@ interface KpiGroupSummary {
   newFansCurrent: number;
 }
 
+function completionTone(value: number) {
+  if (value >= 1) return "over";
+  if (value < 0.6) return "low";
+  return "near";
+}
+
 function ProgressCell({ value }: { value: number }) {
+  const fill = `${Math.min(100, Math.max(0, value * 100))}%`;
   return (
-    <div className="progress-cell">
-      <ProgressBar min={0} max={1} value={Math.min(1, value)} showStatus={false} />
+    <div className={`completion-cell completion-cell-${completionTone(value)}`} style={{ "--completion-fill": fill } as CSSProperties}>
       <span>{formatPlainPercent(value)}</span>
+      <i aria-hidden="true" />
     </div>
+  );
+}
+
+function MetricSummaryLine({ label, current, target }: { label: string; current: number; target: number }) {
+  const completion = target === 0 ? 0 : current / target;
+  return (
+    <p className={`summary-completion summary-completion-${completionTone(completion)}`}>
+      <span>{label}</span>
+      <strong>{formatPlainPercent(completion)}</strong>
+      <small>{formatNumber(current)} / {formatNumber(target)}</small>
+    </p>
   );
 }
 
@@ -105,9 +123,9 @@ export function KpiManagementSection({ model }: { model: DashboardModel }) {
               <strong>{formatPlainPercent(averageCompletion(item))}</strong>
             </div>
             <small>{item.dealers} 家经销商</small>
-            <p>阅读 {formatNumber(item.readsCurrent)} / {formatNumber(item.readsTarget)}</p>
-            <p>互动 {formatNumber(item.engagementCurrent)} / {formatNumber(item.engagementTarget)}</p>
-            <p>新增粉丝 {formatNumber(item.newFansCurrent)} / {formatNumber(item.newFansTarget)}</p>
+            <MetricSummaryLine label="阅读" current={item.readsCurrent} target={item.readsTarget} />
+            <MetricSummaryLine label="互动" current={item.engagementCurrent} target={item.engagementTarget} />
+            <MetricSummaryLine label="新增粉丝" current={item.newFansCurrent} target={item.newFansTarget} />
           </article>
         ))}
       </div>
