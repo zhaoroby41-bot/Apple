@@ -265,6 +265,43 @@ h1 {
   box-shadow: 0 12px 34px rgba(0, 0, 0, 0.045);
 }
 
+.filter-bar-compact {
+  grid-template-columns: minmax(180px, 220px);
+}
+
+.page-tabs {
+  display: inline-flex;
+  gap: 4px;
+  margin: 14px 0 0;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.035);
+}
+
+.page-tabs button {
+  min-width: 112px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--muted);
+  background: transparent;
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.page-tabs button.active {
+  color: #fff;
+  background: var(--ink);
+}
+
+.page-tabs button:not(.active):hover {
+  color: var(--ink);
+  background: rgba(29, 29, 31, 0.055);
+}
+
 .dashboard-workspace {
   display: grid;
   grid-template-columns: 330px minmax(0, 1fr);
@@ -415,6 +452,34 @@ h1 {
   font-weight: 600;
 }
 
+.quarter-selector {
+  min-width: 180px;
+  margin-left: auto;
+}
+
+.quarter-selector span {
+  display: block;
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.quarter-selector .dx-texteditor {
+  border: 1px solid rgba(29, 29, 31, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: none;
+}
+
+.quarter-selector .dx-texteditor-input {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 650;
+}
+
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -534,6 +599,17 @@ h1 {
   margin: 8px 0 0;
   color: #424245;
   font-size: 14px;
+}
+
+.kpi-page-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 220px);
+  gap: 14px;
+  align-items: end;
+}
+
+.kpi-page-heading p:last-child {
+  grid-column: 1 / -1;
 }
 
 .analysis-grid {
@@ -986,8 +1062,22 @@ h1 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .page-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
   .brand-mark {
     margin-bottom: 0;
+  }
+
+  .kpi-page-heading {
+    grid-template-columns: 1fr;
+  }
+
+  .quarter-selector {
+    width: 100%;
   }
 
   .chart-panel {
@@ -1060,6 +1150,15 @@ h1 {
 
   .filter-bar {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .kpi-page-heading {
+    grid-template-columns: 1fr;
+  }
+
+  .quarter-selector {
+    width: 100%;
+    margin-left: 0;
   }
 
   .dashboard-workspace {

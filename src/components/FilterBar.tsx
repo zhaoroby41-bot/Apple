@@ -5,6 +5,7 @@ interface FilterBarProps {
   dataset: MockDataset;
   filters: DashboardFilters;
   onChange: (filters: DashboardFilters) => void;
+  showPeriod?: boolean;
 }
 
 const platforms = [
@@ -22,9 +23,9 @@ const periods = [
   { value: "1y", label: "1年" },
 ];
 
-export function FilterBar({ dataset, filters, onChange }: FilterBarProps) {
+export function FilterBar({ dataset, filters, onChange, showPeriod = true }: FilterBarProps) {
   return (
-    <section className="filter-bar" aria-label="Dashboard filters">
+    <section className={`filter-bar ${showPeriod ? "" : "filter-bar-compact"}`} aria-label="Dashboard filters">
       <div className="filter-control">
         <span>平台</span>
         <SelectBox
@@ -35,16 +36,18 @@ export function FilterBar({ dataset, filters, onChange }: FilterBarProps) {
           onValueChanged={(event) => onChange({ ...filters, platform: event.value, accountId: "all" })}
         />
       </div>
-      <div className="filter-control">
-        <span>周期</span>
-        <SelectBox
-          items={periods}
-          value={filters.period}
-          valueExpr="value"
-          displayExpr="label"
-          onValueChanged={(event) => onChange({ ...filters, period: event.value })}
-        />
-      </div>
+      {showPeriod ? (
+        <div className="filter-control">
+          <span>周期</span>
+          <SelectBox
+            items={periods}
+            value={filters.period}
+            valueExpr="value"
+            displayExpr="label"
+            onValueChanged={(event) => onChange({ ...filters, period: event.value })}
+          />
+        </div>
+      ) : null}
     </section>
   );
 }

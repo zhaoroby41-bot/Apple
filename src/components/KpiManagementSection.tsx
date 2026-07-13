@@ -9,11 +9,17 @@ import DataGrid, {
   Summary,
   TotalItem,
 } from "devextreme-react/data-grid";
+import SelectBox from "devextreme-react/select-box";
 import type { CSSProperties } from "react";
 import type { DashboardModel, KpiRow } from "../lib/metrics";
 import { formatNumber, formatPlainPercent } from "../lib/format";
+import type { QuarterKey } from "../types";
 
 const groupOrder = ["一组", "二组", "三组", "四组"];
+const quarterOptions: Array<{ value: QuarterKey; label: string }> = [
+  { value: "2026Q2", label: "2026 Q2" },
+  { value: "2026Q3", label: "2026 Q3" },
+];
 
 function compareGroups(a: string, b: string) {
   return groupOrder.indexOf(a) - groupOrder.indexOf(b);
@@ -140,24 +146,43 @@ function TotalCompletionCard({ label, current, target, description }: { label: s
   );
 }
 
-export function KpiManagementSection({ model }: { model: DashboardModel }) {
+export function KpiManagementSection({
+  model,
+  quarter,
+  onQuarterChange,
+}: {
+  model: DashboardModel;
+  quarter: QuarterKey;
+  onQuarterChange: (quarter: QuarterKey) => void;
+}) {
   const summaries = Array.from(groupSummary(model.kpiRows)).sort((a, b) => groupOrder.indexOf(a.group) - groupOrder.indexOf(b.group));
   const totals = totalSummary(model.kpiRows);
+  const targetCaption = `${model.kpiQuarterLabel} KPI`;
 
   return (
     <section className="analysis-section">
-      <div className="section-heading">
+      <div className="section-heading kpi-page-heading">
         <div>
           <p className="eyebrow">Quarterly KPI</p>
           <h2>经销商季度 KPI 报表</h2>
         </div>
-        <p>参考季度 KPI Excel 模板，以分组为主线展示经销商专业号的阅读/播放、互动量和新增粉丝目标完成情况。</p>
+        <div className="quarter-selector">
+          <span>季度</span>
+          <SelectBox
+            items={quarterOptions}
+            value={quarter}
+            valueExpr="value"
+            displayExpr="label"
+            onValueChanged={(event) => onQuarterChange(event.value)}
+          />
+        </div>
+        <p>参考季度 KPI Excel 模板，以分组为主线展示经销商专业号的阅读/播放、互动量和新增粉丝目标完成情况。当前统计区间：{model.kpiWindow.start} 至 {model.kpiWindow.end}。</p>
       </div>
 
       <div className="kpi-completion-overview" aria-label="KPI completion overview">
-        <TotalCompletionCard label="阅读完成率" current={totals.readsCurrent} target={totals.readsTarget} description="本季度累计阅读/播放 / 季度阅读 KPI" />
-        <TotalCompletionCard label="互动完成率" current={totals.engagementCurrent} target={totals.engagementTarget} description="本季度累计互动 / 季度互动 KPI" />
-        <TotalCompletionCard label="新增粉丝完成率" current={totals.newFansCurrent} target={totals.newFansTarget} description="本季度新增粉丝 / 季度新增粉丝 KPI" />
+        <TotalCompletionCard label="阅读完成率" current={totals.readsCurrent} target={totals.readsTarget} description={`${model.kpiQuarterLabel} 阅读/播放 / 阅读 KPI`} />
+        <TotalCompletionCard label="互动完成率" current={totals.engagementCurrent} target={totals.engagementTarget} description={`${model.kpiQuarterLabel} 互动 / 互动 KPI`} />
+        <TotalCompletionCard label="新增粉丝完成率" current={totals.newFansCurrent} target={totals.newFansTarget} description={`${model.kpiQuarterLabel} 新增粉丝 / 新增粉丝 KPI`} />
       </div>
 
       <div className="kpi-report-summary" aria-label="KPI group summary">
@@ -186,17 +211,17 @@ export function KpiManagementSection({ model }: { model: DashboardModel }) {
           <Column dataField="dealer" caption="小红书账号" minWidth={180} fixed />
           <Column dataField="accountCount" caption="覆盖账号数" width={96} alignment="right" />
           <Column caption="阅读/播放">
-            <Column dataField="readsTarget" caption="季度 KPI" dataType="number" format="#,##0" width={118} />
+            <Column dataField="readsTarget" caption={targetCaption} dataType="number" format="#,##0" width={118} />
             <Column dataField="readsCurrent" caption="当前完成" dataType="number" format="#,##0" width={118} />
             <Column dataField="readsCompletion" caption="完成率" cellRender={(cell) => <ProgressCell value={cell.value} />} width={174} />
           </Column>
           <Column caption="互动量">
-            <Column dataField="engagementTarget" caption="季度 KPI" dataType="number" format="#,##0" width={112} />
+            <Column dataField="engagementTarget" caption={targetCaption} dataType="number" format="#,##0" width={112} />
             <Column dataField="engagementCurrent" caption="当前完成" dataType="number" format="#,##0" width={112} />
             <Column dataField="engagementCompletion" caption="完成率" cellRender={(cell) => <ProgressCell value={cell.value} />} width={174} />
           </Column>
           <Column caption="新增粉丝">
-            <Column dataField="newFansTarget" caption="季度 KPI" dataType="number" format="#,##0" width={112} />
+            <Column dataField="newFansTarget" caption={targetCaption} dataType="number" format="#,##0" width={112} />
             <Column dataField="newFansCurrent" caption="当前完成" dataType="number" format="#,##0" width={112} />
             <Column dataField="newFansCompletion" caption="完成率" cellRender={(cell) => <ProgressCell value={cell.value} />} width={174} />
           </Column>
@@ -213,7 +238,7 @@ export function KpiManagementSection({ model }: { model: DashboardModel }) {
             <TotalItem column="newFansCurrent" summaryType="sum" valueFormat="#,##0" displayFormat="{0}" />
           </Summary>
         </DataGrid>
-        <p className="table-note">目标列对应 Excel 中的季度 KPI，当前完成列对应本季度至当前日期的累计表现；按权限和左侧组织树筛选后，目标会按可见账号范围同比例折算。</p>
+        <p className="table-note">目标列对应 {model.kpiQuarterLabel} 的季度 KPI，当前完成列对应所选季度统计区间内的累计表现；按权限和左侧组织树筛选后，目标会按可见账号范围同比例折算。</p>
       </article>
     </section>
   );

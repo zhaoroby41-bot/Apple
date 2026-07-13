@@ -2,6 +2,7 @@ export type Platform = "all" | "xiaohongshu" | "douyin";
 export type AccountPlatform = Exclude<Platform, "all">;
 export type UserRole = "apple" | "dealer";
 export type PeriodKey = "7d" | "15d" | "30d" | "3m" | "6m" | "1y";
+export type QuarterKey = "2026Q2" | "2026Q3";
 export type EngagementMetricKey =
   | "engagement"
   | "readsOrViews"

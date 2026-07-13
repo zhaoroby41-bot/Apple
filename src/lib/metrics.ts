@@ -6,6 +6,7 @@ import type {
   EngagementMetricKey,
   MockDataset,
   PeriodKey,
+  QuarterKey,
   StoreAccount,
 } from "../types";
 
@@ -130,6 +131,9 @@ export interface DashboardModel {
   activeDistribution: ActiveDistributionRow[];
   rankingRows: RankingRow[];
   kpiRows: KpiRow[];
+  kpiQuarter: QuarterKey;
+  kpiQuarterLabel: string;
+  kpiWindow: { start: string; end: string };
   activeRate: number;
   quarterlyKpiCompletion: number;
 }
@@ -332,19 +336,32 @@ function statusForCompletion(completion: number, expectedQuarterProgress: number
   return "At Risk";
 }
 
-function getQuarterStart(today: string) {
+function currentQuarterKey(today: string): QuarterKey {
   const date = toDate(today);
-  const month = date.getUTCMonth();
-  const quarterStartMonth = Math.floor(month / 3) * 3;
-  return toIsoDate(new Date(Date.UTC(date.getUTCFullYear(), quarterStartMonth, 1)));
+  const quarter = Math.floor(date.getUTCMonth() / 3) + 1;
+  return `${date.getUTCFullYear()}Q${quarter}` as QuarterKey;
 }
 
-function getQuarterProgress(today: string) {
-  const date = toDate(today);
-  const start = toDate(getQuarterStart(today));
-  const month = date.getUTCMonth();
-  const quarterEnd = new Date(Date.UTC(date.getUTCFullYear(), Math.floor(month / 3) * 3 + 3, 0));
-  return (date.getTime() - start.getTime()) / (quarterEnd.getTime() - start.getTime());
+function getQuarterWindow(quarter: QuarterKey, today: string) {
+  const year = Number(quarter.slice(0, 4));
+  const quarterIndex = Number(quarter.slice(5)) - 1;
+  const start = new Date(Date.UTC(year, quarterIndex * 3, 1));
+  const quarterEnd = new Date(Date.UTC(year, quarterIndex * 3 + 3, 0));
+  const todayDate = toDate(today);
+  const end = quarterEnd.getTime() > todayDate.getTime() ? todayDate : quarterEnd;
+  return {
+    start: toIsoDate(start),
+    end: toIsoDate(end),
+    quarterEnd: toIsoDate(quarterEnd),
+  };
+}
+
+function getQuarterProgress(quarter: QuarterKey, today: string) {
+  const window = getQuarterWindow(quarter, today);
+  const start = toDate(window.start);
+  const end = toDate(window.end);
+  const quarterEnd = toDate(window.quarterEnd);
+  return (end.getTime() - start.getTime()) / (quarterEnd.getTime() - start.getTime());
 }
 
 function buildImpactRows(
@@ -385,7 +402,7 @@ function buildImpactRows(
     .slice(0, 12);
 }
 
-export function buildDashboardModel(dataset: MockDataset, filters: DashboardFilters, metric: EngagementMetricKey): DashboardModel {
+export function buildDashboardModel(dataset: MockDataset, filters: DashboardFilters, metric: EngagementMetricKey, kpiQuarter: QuarterKey = currentQuarterKey(dataset.mockToday)): DashboardModel {
   const window = getPeriodWindow(filters.period, dataset.mockToday);
   const accounts = filterAccounts(dataset, filters);
   const metricsByAccount = groupDailyMetrics(dataset);
@@ -468,8 +485,8 @@ export function buildDashboardModel(dataset: MockDataset, filters: DashboardFilt
     activeDistributionMap.set(key, row);
   });
 
-  const quarterStart = getQuarterStart(dataset.mockToday);
-  const expectedQuarterProgress = getQuarterProgress(dataset.mockToday);
+  const quarterWindow = getQuarterWindow(kpiQuarter, dataset.mockToday);
+  const expectedQuarterProgress = getQuarterProgress(kpiQuarter, dataset.mockToday);
   const allAccountCountsByDealer = dealerAccountCounts(dataset.accounts);
   const kpiRows = Array.from(
     accountPeriodTotals
@@ -486,7 +503,7 @@ export function buildDashboardModel(dataset: MockDataset, filters: DashboardFilt
         const dealer = dealerMap.get(account.dealerId) as Dealer;
         const row = rows.get(account.dealerId) ?? { dealer, accountCount: 0, totals: emptyTotals() };
         const metrics = metricsByAccount.get(account.id) ?? [];
-        const quarterTotals = aggregateAccountPeriod(metrics, quarterStart, dataset.mockToday);
+        const quarterTotals = aggregateAccountPeriod(metrics, quarterWindow.start, quarterWindow.end);
         row.accountCount += 1;
         addTotals(row.totals, quarterTotals);
         rows.set(account.dealerId, row);
@@ -563,6 +580,9 @@ export function buildDashboardModel(dataset: MockDataset, filters: DashboardFilt
     activeDistribution: Array.from(activeDistributionMap.values()),
     rankingRows: dealerRankingRows,
     kpiRows,
+    kpiQuarter,
+    kpiQuarterLabel: kpiQuarter,
+    kpiWindow: { start: quarterWindow.start, end: quarterWindow.end },
     activeRate,
     quarterlyKpiCompletion,
   };

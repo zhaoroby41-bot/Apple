@@ -8,7 +8,9 @@ import { KpiOverview } from "./components/KpiOverview";
 import { OrganizationScopeTree } from "./components/OrganizationScopeTree";
 import { mockDataset } from "./data/mockData";
 import { buildDashboardModel } from "./lib/metrics";
-import type { DashboardFilters, EngagementMetricKey } from "./types";
+import type { DashboardFilters, EngagementMetricKey, QuarterKey } from "./types";
+
+type AppPage = "overview" | "kpi";
 
 const initialFilters: DashboardFilters = {
   platform: "all",
@@ -21,7 +23,9 @@ const initialFilters: DashboardFilters = {
 export default function App() {
   const [filters, setFilters] = useState<DashboardFilters>(initialFilters);
   const [engagementMetric, setEngagementMetric] = useState<EngagementMetricKey>("engagement");
-  const model = useMemo(() => buildDashboardModel(mockDataset, filters, engagementMetric), [filters, engagementMetric]);
+  const [kpiQuarter, setKpiQuarter] = useState<QuarterKey>("2026Q3");
+  const [page, setPage] = useState<AppPage>("overview");
+  const model = useMemo(() => buildDashboardModel(mockDataset, filters, engagementMetric, kpiQuarter), [filters, engagementMetric, kpiQuarter]);
 
   return (
     <main className="app-shell">
@@ -41,15 +45,24 @@ export default function App() {
           <span>数据截至 {mockDataset.mockToday}</span>
         </div>
       </section>
-      <FilterBar dataset={mockDataset} filters={filters} onChange={setFilters} />
+      <nav className="page-tabs" aria-label="Dashboard pages">
+        <button type="button" className={page === "overview" ? "active" : ""} onClick={() => setPage("overview")}>运营总览</button>
+        <button type="button" className={page === "kpi" ? "active" : ""} onClick={() => setPage("kpi")}>季度 KPI 报表</button>
+      </nav>
+      <FilterBar dataset={mockDataset} filters={filters} onChange={setFilters} showPeriod={page === "overview"} />
       <div className="dashboard-workspace">
         <OrganizationScopeTree dataset={mockDataset} filters={filters} onChange={setFilters} />
         <div className="dashboard-content">
-          <KpiOverview model={model} />
-          <FanTrendSection model={model} />
-          <EngagementTrendSection model={model} metric={engagementMetric} onMetricChange={setEngagementMetric} />
-          <ActiveAccountsSection model={model} />
-          <KpiManagementSection model={model} />
+          {page === "overview" ? (
+            <>
+              <KpiOverview model={model} />
+              <FanTrendSection model={model} />
+              <EngagementTrendSection model={model} metric={engagementMetric} onMetricChange={setEngagementMetric} />
+              <ActiveAccountsSection model={model} />
+            </>
+          ) : (
+            <KpiManagementSection model={model} quarter={kpiQuarter} onQuarterChange={setKpiQuarter} />
+          )}
         </div>
       </div>
     </main>

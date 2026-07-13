@@ -48,4 +48,15 @@ describe("metrics", () => {
     expect(countsByGroup["三组"]).toBe(21);
     expect(countsByGroup["四组"]).toBe(18);
   });
+
+  it("switches KPI rows by selected quarter", () => {
+    const filters = { platform: "all" as const, period: "30d" as const, regionId: "all", dealerId: "all", accountId: "all" };
+    const q2 = buildDashboardModel(mockDataset, filters, "engagement", "2026Q2");
+    const q3 = buildDashboardModel(mockDataset, filters, "engagement", "2026Q3");
+
+    expect(q2.kpiQuarterLabel).toBe("2026Q2");
+    expect(q2.kpiWindow).toEqual({ start: "2026-04-01", end: "2026-06-30" });
+    expect(q3.kpiWindow).toEqual({ start: "2026-07-01", end: "2026-07-12" });
+    expect(q2.kpiRows[0].readsCurrent).not.toBe(q3.kpiRows[0].readsCurrent);
+  });
 });
