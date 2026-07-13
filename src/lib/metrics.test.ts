@@ -70,6 +70,27 @@ describe("metrics", () => {
     expect(douyin.accountCount).toBeLessThan(all.accountCount);
   });
 
+  it("filters dashboard accounts by multiple dealer and region scope nodes", () => {
+    const model = buildDashboardModel(
+      mockDataset,
+      {
+        platform: "all",
+        period: "30d",
+        regionId: "all",
+        dealerId: "all",
+        accountId: "all",
+        scopeNodeIds: ["dealer:dealer-2", "region:dealer-1:north"],
+      },
+      "engagement",
+    );
+    const expectedCount = mockDataset.accounts.filter(
+      (account) => account.dealerId === "dealer-2" || (account.dealerId === "dealer-1" && account.regionId === "north"),
+    ).length;
+
+    expect(model.accountCount).toBe(expectedCount);
+    expect(model.dealerCount).toBe(2);
+  });
+
   it("filters KPI report rows by selected platform", () => {
     const base = { period: "30d" as const, regionId: "all", dealerId: "all", accountId: "all" };
     const xiaohongshu = buildDashboardModel(mockDataset, { ...base, platform: "xiaohongshu" }, "engagement", "2026Q3");

@@ -197,9 +197,19 @@ function isWithin(date: string, start: string, end: string) {
 }
 
 export function filterAccounts(dataset: MockDataset, filters: DashboardFilters): StoreAccount[] {
+  const scopeNodeIds = filters.scopeNodeIds?.filter((id) => id !== "root:all") ?? [];
   return dataset.accounts.filter((account) => {
     if (dataset.currentUser.role === "dealer" && dataset.currentUser.dealerId && account.dealerId !== dataset.currentUser.dealerId) return false;
     if (filters.platform !== "all" && account.platform !== filters.platform) return false;
+    if (scopeNodeIds.length > 0) {
+      const matchesScope = scopeNodeIds.some((id) => {
+        const [type, dealerId, regionId] = id.split(":");
+        if (type === "dealer") return account.dealerId === dealerId;
+        if (type === "region") return account.dealerId === dealerId && (regionId === "direct" ? account.regionId === null : account.regionId === regionId);
+        return false;
+      });
+      if (!matchesScope) return false;
+    }
     if (filters.regionId !== "all" && (filters.regionId === "direct" ? account.regionId !== null : account.regionId !== filters.regionId)) return false;
     if (filters.dealerId !== "all" && account.dealerId !== filters.dealerId) return false;
     if (filters.accountId !== "all" && account.id !== filters.accountId) return false;

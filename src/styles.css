@@ -393,80 +393,84 @@ h1 {
   font-weight: 650;
 }
 
-.org-scope-panel .dx-treeview {
+.org-scope-treelist {
   height: calc(100vh - 220px);
   min-height: 460px;
   padding: 10px 8px 14px;
+  background: transparent;
 }
 
-.org-scope-panel .dx-treeview-search {
-  margin: 0 6px 12px;
+.org-scope-treelist .dx-treelist-search-panel {
+  margin: 0 6px 12px !important;
 }
 
-.org-scope-panel .dx-searchbox {
+.org-scope-panel .dx-searchbox,
+.org-scope-panel .dx-texteditor {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: rgba(245, 245, 247, 0.72);
 }
 
-.org-scope-panel .dx-treeview-node {
-  padding: 1px 0;
+.org-scope-treelist .dx-treelist-headers {
+  display: none;
 }
 
-.org-scope-panel .dx-treeview-item {
-  min-height: 34px;
-  border-radius: 8px;
+.org-scope-treelist .dx-treelist-rowsview,
+.org-scope-treelist .dx-treelist-headers,
+.org-scope-treelist .dx-treelist-total-footer {
+  border: 0;
+  background: transparent;
 }
 
-.org-scope-panel .dx-treeview-item.dx-state-hover {
+.org-scope-treelist .dx-row > td {
+  height: 38px;
+  border: 0;
+  color: #424245;
+  font-size: 13px;
+  font-weight: 650;
+  vertical-align: middle;
+}
+
+.org-scope-treelist .dx-row.dx-state-hover > td {
   background: rgba(0, 113, 227, 0.06);
 }
 
-.org-scope-panel .dx-treeview-node.dx-state-selected > .dx-treeview-item {
+.org-scope-treelist .dx-row.dx-selection > td,
+.org-scope-treelist .dx-row.dx-selection.dx-state-hover > td {
   color: var(--ink);
   background: rgba(0, 113, 227, 0.1);
 }
 
-.org-tree-item {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
-  align-items: center;
-  width: 100%;
-  color: #424245;
-  font-size: 13px;
-  font-weight: 600;
+.org-scope-treelist .dx-treelist-checkbox-size {
+  width: 16px;
+  height: 16px;
 }
 
-.org-tree-item span {
+.org-scope-name {
+  display: inline-block;
+  max-width: 184px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.org-tree-item strong {
+.org-scope-count {
   color: var(--muted);
   font-size: 12px;
   font-weight: 750;
 }
 
-.org-tree-item-root {
+.org-scope-name-root {
   color: var(--ink);
   font-weight: 750;
 }
 
-.org-tree-item-dealer {
+.org-scope-name-dealer {
   color: #2c2c2e;
 }
 
-.org-tree-item-region {
-  color: #424245;
-}
-
-.org-tree-item-account {
+.org-scope-name-region {
   color: var(--muted);
-  font-size: 12px;
-  font-weight: 600;
 }
 
 .filter-control {
@@ -1270,7 +1274,7 @@ h1 {
     writing-mode: horizontal-tb;
   }
 
-  .org-scope-panel .dx-treeview {
+  .org-scope-treelist {
     height: auto;
     min-height: 360px;
     max-height: 520px;
@@ -1347,7 +1351,7 @@ h1 {
     max-height: none;
   }
 
-  .org-scope-panel .dx-treeview {
+  .org-scope-treelist {
     height: 420px;
     min-height: 420px;
   }

@@ -75,4 +75,5 @@ export interface DashboardFilters {
   regionId: string;
   dealerId: string;
   accountId: string;
+  scopeNodeIds?: string[];
 }

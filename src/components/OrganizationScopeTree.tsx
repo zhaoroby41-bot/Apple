@@ -1,17 +1,15 @@
-import TreeView from "devextreme-react/tree-view";
+import TreeList, { Column, Scrolling, SearchPanel, Selection } from "devextreme-react/tree-list";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import type { DashboardFilters, MockDataset, StoreAccount } from "../types";
 
-interface ScopeNode {
+interface ScopeRow {
   id: string;
-  text: string;
+  parentId: string | null;
+  name: string;
   count: number;
-  type: "root" | "dealer" | "region" | "account";
+  type: "root" | "dealer" | "region";
   dealerId?: string;
   regionId?: string;
-  accountId?: string;
-  expanded?: boolean;
-  items?: ScopeNode[];
 }
 
 interface OrganizationScopeTreeProps {
@@ -21,11 +19,6 @@ interface OrganizationScopeTreeProps {
   collapsed: boolean;
   onToggleCollapsed: () => void;
 }
-
-const platformLabel = {
-  xiaohongshu: "小红书",
-  douyin: "抖音",
-};
 
 function accountVisibleByPermission(dataset: MockDataset, account: StoreAccount) {
   if (dataset.currentUser.role === "apple") return true;
@@ -37,113 +30,78 @@ function accountVisibleInTree(dataset: MockDataset, filters: DashboardFilters, a
   return filters.platform === "all" || account.platform === filters.platform;
 }
 
-function buildTree(dataset: MockDataset, filters: DashboardFilters): ScopeNode[] {
+function buildRows(dataset: MockDataset, filters: DashboardFilters): ScopeRow[] {
+  const rows: ScopeRow[] = [];
   const visibleDealers =
     dataset.currentUser.role === "apple"
       ? dataset.dealers
       : dataset.dealers.filter((dealer) => dealer.id === dataset.currentUser.dealerId);
-  const regionMap = new Map(dataset.regions.map((region) => [region.id, region]));
   const visibleAccounts = dataset.accounts.filter((account) => accountVisibleInTree(dataset, filters, account));
+  const regionMap = new Map(dataset.regions.map((region) => [region.id, region]));
+  const rootId = "root:all";
 
-  const dealerNodes: ScopeNode[] = visibleDealers.map((dealer, index) => {
+  if (dataset.currentUser.role === "apple") {
+    rows.push({
+      id: rootId,
+      parentId: null,
+      name: "一级经销商55家",
+      count: visibleAccounts.length,
+      type: "root",
+    });
+  }
+
+  visibleDealers.forEach((dealer) => {
     const dealerAccounts = visibleAccounts.filter((account) => account.dealerId === dealer.id);
-    const directAccounts = dealerAccounts.filter((account) => account.regionId === null);
-    const regionIds = Array.from(new Set(dealerAccounts.map((account) => account.regionId).filter(Boolean))) as string[];
-    const children: ScopeNode[] = [];
+    const dealerId = `dealer:${dealer.id}`;
+    rows.push({
+      id: dealerId,
+      parentId: dataset.currentUser.role === "apple" ? rootId : null,
+      name: dealer.name,
+      count: dealerAccounts.length,
+      type: "dealer",
+      dealerId: dealer.id,
+    });
 
+    const regionIds = Array.from(new Set(dealerAccounts.map((account) => account.regionId).filter(Boolean))) as string[];
     regionIds.forEach((regionId) => {
-      const region = regionMap.get(regionId);
       const regionAccounts = dealerAccounts.filter((account) => account.regionId === regionId);
-      children.push({
+      rows.push({
         id: `region:${dealer.id}:${regionId}`,
-        text: region?.label ?? regionId,
+        parentId: dealerId,
+        name: regionMap.get(regionId)?.label ?? regionId,
         count: regionAccounts.length,
         type: "region",
         dealerId: dealer.id,
         regionId,
-        expanded: index === 0,
-        items: regionAccounts.map((account) => ({
-          id: `account:${account.id}`,
-          text: `${account.city} ${platformLabel[account.platform]}门店号`,
-          count: 1,
-          type: "account",
-          dealerId: dealer.id,
-          regionId,
-          accountId: account.id,
-        })),
       });
     });
-
-    directAccounts.forEach((account) => {
-      children.push({
-        id: `account:${account.id}`,
-        text: `${account.city} ${platformLabel[account.platform]}门店号`,
-        count: 1,
-        type: "account",
-        dealerId: dealer.id,
-        regionId: "direct",
-        accountId: account.id,
-      });
-    });
-
-    return {
-      id: `dealer:${dealer.id}`,
-      text: dealer.name,
-      count: dealerAccounts.length,
-      type: "dealer",
-      dealerId: dealer.id,
-      expanded: index === 0,
-      items: children,
-    };
   });
 
-  if (dataset.currentUser.role === "dealer" && dealerNodes.length === 1) {
-    return dealerNodes;
-  }
-
-  return [
-    {
-      id: "root:all",
-      text: "一级经销商55家",
-      count: visibleAccounts.length,
-      type: "root",
-      expanded: true,
-      items: dealerNodes,
-    },
-  ];
+  return rows.filter((row) => row.type === "root" || row.count > 0);
 }
 
-function flatten(nodes: ScopeNode[]): ScopeNode[] {
-  return nodes.flatMap((node) => [node, ...flatten(node.items ?? [])]);
+function normalizeSelection(keys: string[], currentSelectedKeys: string[]) {
+  if (currentSelectedKeys.includes("root:all")) return ["root:all"];
+  const scopedKeys = keys.filter((key) => key !== "root:all");
+  return scopedKeys.length === 0 ? ["root:all"] : scopedKeys;
 }
 
-function selectedNodeId(nodes: ScopeNode[], filters: DashboardFilters) {
-  if (filters.accountId !== "all") return `account:${filters.accountId}`;
-  if (filters.dealerId !== "all" && filters.regionId !== "all") return `region:${filters.dealerId}:${filters.regionId}`;
-  if (filters.dealerId !== "all") return `dealer:${filters.dealerId}`;
-  return nodes[0]?.id ?? "root:all";
+function selectedKeys(filters: DashboardFilters) {
+  return filters.scopeNodeIds && filters.scopeNodeIds.length > 0 ? filters.scopeNodeIds : ["root:all"];
 }
 
 export function OrganizationScopeTree({ dataset, filters, onChange, collapsed, onToggleCollapsed }: OrganizationScopeTreeProps) {
-  const tree = buildTree(dataset, filters);
-  const nodes = flatten(tree);
+  const rows = buildRows(dataset, filters);
 
-  function selectNode(node?: ScopeNode) {
-    if (!node) return;
-    if (node.type === "root") {
-      onChange({ ...filters, dealerId: "all", regionId: "all", accountId: "all" });
-    } else if (node.type === "dealer") {
-      onChange({ ...filters, dealerId: node.dealerId ?? "all", regionId: "all", accountId: "all" });
-    } else if (node.type === "region") {
-      onChange({ ...filters, dealerId: node.dealerId ?? "all", regionId: node.regionId ?? "all", accountId: "all" });
-    } else {
-      onChange({
-        ...filters,
-        dealerId: node.dealerId ?? "all",
-        regionId: node.regionId ?? "all",
-        accountId: node.accountId ?? "all",
-      });
-    }
+  function changeSelection(keys: string[], currentSelectedKeys: string[]) {
+    const normalized = normalizeSelection(keys, currentSelectedKeys);
+    onChange({
+      ...filters,
+      scopeNodeIds: normalized,
+      dealerId: "all",
+      regionId: "all",
+      accountId: "all",
+    });
   }
 
   if (collapsed) {
@@ -165,26 +123,28 @@ export function OrganizationScopeTree({ dataset, filters, onChange, collapsed, o
       <div className="org-scope-header">
         <p className="eyebrow">Account Hierarchy</p>
         <h2>组织账号范围</h2>
-        <span>选择节点后，右侧数据即时聚合到该范围</span>
+        <span>支持多选经销商和大区，右侧数据会聚合到所选范围</span>
       </div>
-      <TreeView
-        items={tree}
-        dataStructure="tree"
+      <TreeList
+        className="org-scope-treelist"
+        dataSource={rows}
         keyExpr="id"
-        displayExpr="text"
-        selectionMode="single"
-        selectByClick
-        searchEnabled
-        searchMode="contains"
-        selectedItemKeys={[selectedNodeId(tree, filters)]}
-        onItemClick={(event) => selectNode(nodes.find((node) => node.id === event.itemData?.id))}
-        itemRender={(item: ScopeNode) => (
-          <div className={`org-tree-item org-tree-item-${item.type}`}>
-            <span>{item.text}</span>
-            <strong>{item.count}</strong>
-          </div>
-        )}
-      />
+        parentIdExpr="parentId"
+        rootValue={null}
+        autoExpandAll
+        showColumnHeaders={false}
+        showBorders={false}
+        columnAutoWidth={false}
+        wordWrapEnabled={false}
+        selectedRowKeys={selectedKeys(filters)}
+        onSelectionChanged={(event) => changeSelection(event.selectedRowKeys as string[], event.currentSelectedRowKeys as string[])}
+      >
+        <SearchPanel visible placeholder="Search" width="100%" />
+        <Selection mode="multiple" recursive={false} selectByClick />
+        <Scrolling mode="standard" />
+        <Column dataField="name" caption="组织" minWidth={190} cellRender={(cell) => <span className={`org-scope-name org-scope-name-${cell.data.type}`}>{cell.value}</span>} />
+        <Column dataField="count" caption="账号数" width={58} alignment="right" cellRender={(cell) => <strong className="org-scope-count">{cell.value}</strong>} />
+      </TreeList>
     </aside>
   );
 }
