@@ -30,6 +30,15 @@ interface KpiGroupSummary {
   newFansCurrent: number;
 }
 
+interface KpiTotalSummary {
+  readsTarget: number;
+  readsCurrent: number;
+  engagementTarget: number;
+  engagementCurrent: number;
+  newFansTarget: number;
+  newFansCurrent: number;
+}
+
 function completionTone(value: number) {
   if (value >= 1) return "over";
   if (value < 0.6) return "low";
@@ -102,8 +111,38 @@ function averageCompletion(item: KpiGroupSummary) {
   ) / 3;
 }
 
+function totalSummary(rows: KpiRow[]): KpiTotalSummary {
+  return rows.reduce<KpiTotalSummary>(
+    (total, row) => ({
+      readsTarget: total.readsTarget + row.readsTarget,
+      readsCurrent: total.readsCurrent + row.readsCurrent,
+      engagementTarget: total.engagementTarget + row.engagementTarget,
+      engagementCurrent: total.engagementCurrent + row.engagementCurrent,
+      newFansTarget: total.newFansTarget + row.newFansTarget,
+      newFansCurrent: total.newFansCurrent + row.newFansCurrent,
+    }),
+    { readsTarget: 0, readsCurrent: 0, engagementTarget: 0, engagementCurrent: 0, newFansTarget: 0, newFansCurrent: 0 },
+  );
+}
+
+function TotalCompletionCard({ label, current, target, description }: { label: string; current: number; target: number; description: string }) {
+  const completion = target === 0 ? 0 : current / target;
+  return (
+    <article className={`kpi-completion-card kpi-completion-card-${completionTone(completion)}`}>
+      <div>
+        <span>{label}</span>
+        <strong>{formatPlainPercent(completion)}</strong>
+      </div>
+      <i style={{ "--completion-fill": `${Math.min(100, Math.max(0, completion * 100))}%` } as CSSProperties} aria-hidden="true" />
+      <p>{description}</p>
+      <small>{formatNumber(current)} / {formatNumber(target)}</small>
+    </article>
+  );
+}
+
 export function KpiManagementSection({ model }: { model: DashboardModel }) {
   const summaries = Array.from(groupSummary(model.kpiRows)).sort((a, b) => groupOrder.indexOf(a.group) - groupOrder.indexOf(b.group));
+  const totals = totalSummary(model.kpiRows);
 
   return (
     <section className="analysis-section">
@@ -113,6 +152,12 @@ export function KpiManagementSection({ model }: { model: DashboardModel }) {
           <h2>经销商季度 KPI 报表</h2>
         </div>
         <p>参考季度 KPI Excel 模板，以分组为主线展示经销商专业号的阅读/播放、互动量和新增粉丝目标完成情况。</p>
+      </div>
+
+      <div className="kpi-completion-overview" aria-label="KPI completion overview">
+        <TotalCompletionCard label="阅读完成率" current={totals.readsCurrent} target={totals.readsTarget} description="本季度累计阅读/播放 / 季度阅读 KPI" />
+        <TotalCompletionCard label="互动完成率" current={totals.engagementCurrent} target={totals.engagementTarget} description="本季度累计互动 / 季度互动 KPI" />
+        <TotalCompletionCard label="新增粉丝完成率" current={totals.newFansCurrent} target={totals.newFansTarget} description="本季度新增粉丝 / 季度新增粉丝 KPI" />
       </div>
 
       <div className="kpi-report-summary" aria-label="KPI group summary">

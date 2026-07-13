@@ -605,6 +605,92 @@ h1 {
   padding: 16px;
 }
 
+.kpi-completion-overview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 12px;
+}
+
+.kpi-completion-card {
+  --completion-accent: #9a5a00;
+  --completion-track: rgba(154, 90, 0, 0.13);
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.026);
+}
+
+.kpi-completion-card-low {
+  --completion-accent: #a11d33;
+  --completion-track: rgba(161, 29, 51, 0.12);
+}
+
+.kpi-completion-card-near {
+  --completion-accent: #9a5a00;
+  --completion-track: rgba(154, 90, 0, 0.13);
+}
+
+.kpi-completion-card-over {
+  --completion-accent: #1f7a3a;
+  --completion-track: rgba(31, 122, 58, 0.13);
+}
+
+.kpi-completion-card > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.kpi-completion-card span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.kpi-completion-card strong {
+  color: var(--completion-accent);
+  font-size: 28px;
+  font-weight: 650;
+  line-height: 1;
+}
+
+.kpi-completion-card > i {
+  position: relative;
+  display: block;
+  height: 5px;
+  margin: 14px 0 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--completion-track);
+}
+
+.kpi-completion-card > i::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--completion-fill);
+  border-radius: inherit;
+  background: var(--completion-accent);
+}
+
+.kpi-completion-card > p,
+.kpi-completion-card > small {
+  display: block;
+  margin: 0;
+  color: #424245;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.kpi-completion-card > small {
+  margin-top: 4px;
+  color: var(--muted);
+}
+
 .kpi-report-summary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -852,6 +938,7 @@ h1 {
   .hero-metrics,
   .dashboard-workspace,
   .kpi-grid,
+  .kpi-completion-overview,
   .kpi-report-summary,
   .analysis-grid,
   .section-heading {
@@ -986,6 +1073,10 @@ h1 {
 
   .kpi-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .kpi-completion-overview {
+    grid-template-columns: 1fr;
   }
 
   .kpi-report-summary {
