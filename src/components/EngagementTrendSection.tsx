@@ -100,7 +100,7 @@ export function EngagementTrendSection({
         <article className="panel table-panel">
           <div className="panel-title">
             <h3>{metricLabel}影响账号</h3>
-            <span>按影响度排序</span>
+            <span>按本周期降序</span>
           </div>
           <DataGrid dataSource={model.engagementImpactRows} keyExpr="id" showBorders={false} columnAutoWidth rowAlternationEnabled>
             <Sorting mode="single" />

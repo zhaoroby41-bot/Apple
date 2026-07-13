@@ -67,7 +67,7 @@ export function FanTrendSection({ model }: { model: DashboardModel }) {
         <article className="panel table-panel">
           <div className="panel-title">
             <h3>粉丝变化影响账号</h3>
-            <span>按影响度排序</span>
+            <span>按本周期降序</span>
           </div>
           <DataGrid dataSource={model.fanImpactRows} keyExpr="id" showBorders={false} columnAutoWidth rowAlternationEnabled>
             <Sorting mode="single" />

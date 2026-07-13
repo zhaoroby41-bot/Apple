@@ -111,10 +111,14 @@ function createDailyMetrics(accounts: StoreAccount[]): DailyMetric[] {
       const campaignPulse = day < 45 && accountIndex % 9 === 0 ? 1.55 : 1;
       const quietAccount = accountIndex % 23 === 0 ? 0.32 : 1;
       const isCurrentPeriod = day < 30;
+      const isPreviousPeriod = day >= 30 && day < 60;
       const suppressed = isCurrentPeriod && currentPeriodProfile === "inactive";
       const lowActivity = isCurrentPeriod && currentPeriodProfile === "low";
       const contentThreshold = lowActivity ? 0.92 : 0.58;
-      const activityScale = suppressed ? 0 : lowActivity ? 0.1 : 1;
+      const highVolumeBucket = accountIndex % 13;
+      const recentTrendScale = isCurrentPeriod && (highVolumeBucket === 9 || highVolumeBucket === 12) ? 1.36 : isCurrentPeriod && accountIndex % 8 === 0 ? 1.24 : 1;
+      const previousTrendScale = isPreviousPeriod && (highVolumeBucket === 10 || highVolumeBucket === 11) ? 2.2 : isPreviousPeriod && accountIndex % 7 === 0 ? 1.75 : 1;
+      const activityScale = (suppressed ? 0 : lowActivity ? 0.1 : 1) * recentTrendScale * previousTrendScale;
       const contentCount = suppressed ? 0 : random() > contentThreshold ? 1 + (lowActivity ? 0 : random() > 0.9 ? 1 : 0) : 0;
       const readsBase = contentCount ? 2200 + random() * 9500 : suppressed ? 0 : random() * 900;
       const readsOrViews = Math.round(readsBase * platformBoost * accountScale * campaignPulse * quietAccount * activityScale);

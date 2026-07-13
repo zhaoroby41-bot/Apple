@@ -388,10 +388,11 @@ function buildImpactRows(
     };
   });
 
-  const totalAbsoluteDelta = rows.reduce((sum, row) => sum + Math.abs(row.delta), 0);
-  return rows
+  const visibleRows = rows.filter((row) => row.current > 0);
+  const totalAbsoluteDelta = visibleRows.reduce((sum, row) => sum + Math.abs(row.delta), 0);
+  return visibleRows
     .map((row) => ({ ...row, impactShare: totalAbsoluteDelta === 0 ? 0 : Math.abs(row.delta) / totalAbsoluteDelta }))
-    .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
+    .sort((a, b) => b.current - a.current || Math.abs(b.delta) - Math.abs(a.delta))
     .slice(0, 12);
 }
 

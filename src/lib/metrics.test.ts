@@ -101,4 +101,19 @@ describe("metrics", () => {
       expect(model.rankingRows[index].activeCount).toBeGreaterThanOrEqual(row.activeCount);
     });
   });
+
+  it("sorts impact rows by current value and avoids zero-current rows", () => {
+    const model = buildDashboardModel(
+      mockDataset,
+      { platform: "all", period: "30d", regionId: "all", dealerId: "all", accountId: "all" },
+      "engagement",
+    );
+
+    expect(model.engagementImpactRows.every((row) => row.current > 0)).toBe(true);
+    model.engagementImpactRows.slice(1).forEach((row, index) => {
+      expect(model.engagementImpactRows[index].current).toBeGreaterThanOrEqual(row.current);
+    });
+    expect(model.engagementImpactRows.some((row) => row.delta > 0)).toBe(true);
+    expect(model.engagementImpactRows.some((row) => row.delta < 0)).toBe(true);
+  });
 });
