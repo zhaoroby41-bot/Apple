@@ -102,6 +102,7 @@ function createDailyMetrics(accounts: StoreAccount[]): DailyMetric[] {
   accounts.forEach((account, accountIndex) => {
     const platformBoost = account.platform === "xiaohongshu" ? 1 : 1.18;
     const accountScale = 0.65 + (accountIndex % 13) * 0.075;
+    const currentPeriodProfile = accountIndex % 17 === 0 ? "inactive" : accountIndex % 11 === 0 || accountIndex % 13 === 0 ? "low" : "normal";
     let fans = Math.round(2100 + accountIndex * 19 + random() * 1400);
 
     for (let day = 364; day >= 0; day -= 1) {
@@ -109,13 +110,19 @@ function createDailyMetrics(accounts: StoreAccount[]): DailyMetric[] {
       const weekday = new Date(`${date}T00:00:00`).getDay();
       const campaignPulse = day < 45 && accountIndex % 9 === 0 ? 1.55 : 1;
       const quietAccount = accountIndex % 23 === 0 ? 0.32 : 1;
-      const contentCount = random() > 0.58 ? 1 + (random() > 0.9 ? 1 : 0) : 0;
-      const readsOrViews = Math.round((contentCount ? 2200 + random() * 9500 : random() * 900) * platformBoost * accountScale * campaignPulse * quietAccount);
+      const isCurrentPeriod = day < 30;
+      const suppressed = isCurrentPeriod && currentPeriodProfile === "inactive";
+      const lowActivity = isCurrentPeriod && currentPeriodProfile === "low";
+      const contentThreshold = lowActivity ? 0.92 : 0.58;
+      const activityScale = suppressed ? 0 : lowActivity ? 0.1 : 1;
+      const contentCount = suppressed ? 0 : random() > contentThreshold ? 1 + (lowActivity ? 0 : random() > 0.9 ? 1 : 0) : 0;
+      const readsBase = contentCount ? 2200 + random() * 9500 : suppressed ? 0 : random() * 900;
+      const readsOrViews = Math.round(readsBase * platformBoost * accountScale * campaignPulse * quietAccount * activityScale);
       const likes = Math.round(readsOrViews * (0.035 + random() * 0.035));
       const collections = account.platform === "xiaohongshu" ? Math.round(readsOrViews * (0.012 + random() * 0.02)) : 0;
       const comments = Math.round(readsOrViews * (0.004 + random() * 0.012));
       const shares = Math.round(readsOrViews * (0.003 + random() * 0.01));
-      const newFans = Math.max(0, Math.round(readsOrViews * (0.002 + random() * 0.004) + (weekday === 5 ? 8 : 0)));
+      const newFans = suppressed ? 0 : Math.max(0, Math.round(readsOrViews * (0.002 + random() * 0.004) + (weekday === 5 ? 8 : 0) * activityScale));
       fans += newFans;
 
       metrics.push({

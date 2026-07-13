@@ -69,4 +69,24 @@ describe("metrics", () => {
     expect(douyin.accountCount).toBe(mockDataset.accounts.filter((account) => account.platform === "douyin").length);
     expect(douyin.accountCount).toBeLessThan(all.accountCount);
   });
+
+  it("models varied account activity instead of every account active", () => {
+    const model = buildDashboardModel(
+      mockDataset,
+      { platform: "all", period: "30d", regionId: "all", dealerId: "all", accountId: "all" },
+      "engagement",
+    );
+    const totals = model.activeDistribution.reduce(
+      (sum, row) => ({
+        active: sum.active + row.active,
+        lowActive: sum.lowActive + row.lowActive,
+        inactive: sum.inactive + row.inactive,
+      }),
+      { active: 0, lowActive: 0, inactive: 0 },
+    );
+
+    expect(model.activeRate).toBeLessThan(1);
+    expect(totals.lowActive).toBeGreaterThan(0);
+    expect(totals.inactive).toBeGreaterThan(0);
+  });
 });
