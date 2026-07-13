@@ -25,6 +25,7 @@ export default function App() {
   const [engagementMetric, setEngagementMetric] = useState<EngagementMetricKey>("engagement");
   const [kpiQuarter, setKpiQuarter] = useState<QuarterKey>("2026Q3");
   const [page, setPage] = useState<AppPage>("overview");
+  const [isScopeCollapsed, setIsScopeCollapsed] = useState(false);
   const model = useMemo(() => buildDashboardModel(mockDataset, filters, engagementMetric, kpiQuarter), [filters, engagementMetric, kpiQuarter]);
 
   return (
@@ -48,8 +49,14 @@ export default function App() {
         <button type="button" className={page === "kpi" ? "active" : ""} onClick={() => setPage("kpi")}>季度 KPI 报表</button>
       </nav>
       <FilterBar dataset={mockDataset} filters={filters} onChange={setFilters} showPeriod={page === "overview"} />
-      <div className="dashboard-workspace">
-        <OrganizationScopeTree dataset={mockDataset} filters={filters} onChange={setFilters} />
+      <div className={`dashboard-workspace ${isScopeCollapsed ? "dashboard-workspace-collapsed" : ""}`}>
+        <OrganizationScopeTree
+          dataset={mockDataset}
+          filters={filters}
+          onChange={setFilters}
+          collapsed={isScopeCollapsed}
+          onToggleCollapsed={() => setIsScopeCollapsed((value) => !value)}
+        />
         <div className="dashboard-content">
           {page === "overview" ? (
             <>

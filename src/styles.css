@@ -307,6 +307,11 @@ h1 {
   grid-template-columns: 330px minmax(0, 1fr);
   gap: 16px;
   align-items: start;
+  transition: grid-template-columns 180ms ease;
+}
+
+.dashboard-workspace-collapsed {
+  grid-template-columns: 52px minmax(0, 1fr);
 }
 
 .dashboard-content {
@@ -324,8 +329,52 @@ h1 {
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.035);
 }
 
+.org-scope-panel-collapsed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 420px;
+  padding: 10px 6px;
+}
+
+.scope-collapse-button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(29, 29, 31, 0.12);
+  border-radius: 8px;
+  color: #515154;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+}
+
+.scope-collapse-button:hover {
+  color: var(--ink);
+  border-color: rgba(0, 113, 227, 0.3);
+  background: rgba(0, 113, 227, 0.08);
+}
+
+.org-scope-panel-collapsed .scope-collapse-button {
+  position: static;
+}
+
+.scope-rail-label {
+  margin-top: 20px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  writing-mode: vertical-rl;
+}
+
 .org-scope-header {
-  padding: 16px 16px 12px;
+  padding: 16px 56px 12px 16px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -1090,6 +1139,18 @@ h1 {
     position: relative;
     top: auto;
     max-height: none;
+  }
+
+  .org-scope-panel-collapsed {
+    flex-direction: row;
+    justify-content: flex-start;
+    min-height: 52px;
+    padding: 10px;
+  }
+
+  .scope-rail-label {
+    margin: 0 0 0 10px;
+    writing-mode: horizontal-tb;
   }
 
   .org-scope-panel .dx-treeview {

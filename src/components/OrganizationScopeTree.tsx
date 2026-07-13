@@ -1,4 +1,5 @@
 import TreeView from "devextreme-react/tree-view";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import type { DashboardFilters, MockDataset, StoreAccount } from "../types";
 
 interface ScopeNode {
@@ -17,6 +18,8 @@ interface OrganizationScopeTreeProps {
   dataset: MockDataset;
   filters: DashboardFilters;
   onChange: (filters: DashboardFilters) => void;
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
 }
 
 const platformLabel = {
@@ -121,7 +124,7 @@ function selectedNodeId(nodes: ScopeNode[], filters: DashboardFilters) {
   return nodes[0]?.id ?? "root:all";
 }
 
-export function OrganizationScopeTree({ dataset, filters, onChange }: OrganizationScopeTreeProps) {
+export function OrganizationScopeTree({ dataset, filters, onChange, collapsed, onToggleCollapsed }: OrganizationScopeTreeProps) {
   const tree = buildTree(dataset, filters);
   const nodes = flatten(tree);
 
@@ -143,8 +146,22 @@ export function OrganizationScopeTree({ dataset, filters, onChange }: Organizati
     }
   }
 
+  if (collapsed) {
+    return (
+      <aside className="org-scope-panel org-scope-panel-collapsed" aria-label="组织账号范围">
+        <button type="button" className="scope-collapse-button" onClick={onToggleCollapsed} title="展开组织账号范围" aria-label="展开组织账号范围">
+          <PanelLeftOpen size={17} strokeWidth={2} />
+        </button>
+        <span className="scope-rail-label">范围</span>
+      </aside>
+    );
+  }
+
   return (
     <aside className="org-scope-panel">
+      <button type="button" className="scope-collapse-button" onClick={onToggleCollapsed} title="收起组织账号范围" aria-label="收起组织账号范围">
+        <PanelLeftClose size={17} strokeWidth={2} />
+      </button>
       <div className="org-scope-header">
         <p className="eyebrow">Account Hierarchy</p>
         <h2>组织账号范围</h2>
