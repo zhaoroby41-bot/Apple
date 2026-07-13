@@ -34,23 +34,11 @@ export default function App() {
             <p className="header-copy">按登录权限限定数据范围，沿经销商、经销商大区和门店账号追踪运营质量。</p>
           </div>
         </div>
-        <div className="command-summary" aria-label="Current scope summary">
-          <div>
-            <span>权限</span>
-            <strong>{mockDataset.currentUser.role === "apple" ? "Apple 全域" : "经销商"}</strong>
-          </div>
-          <div>
-            <span>范围</span>
-            <strong>{model.scopeLabel}</strong>
-          </div>
-          <div>
-            <span>覆盖</span>
-            <strong>{model.dealerCount} 家 / {model.accountCount} 号</strong>
-          </div>
-          <div>
-            <span>周期锚点</span>
-            <strong>{mockDataset.mockToday}</strong>
-          </div>
+        <div className="command-context" aria-label="Current data context">
+          <span>{mockDataset.currentUser.role === "apple" ? "Apple 全域可见" : "经销商权限"}</span>
+          <span>{model.scopeLabel}</span>
+          <span>{model.dealerCount} 家经销商 / {model.accountCount} 个账号</span>
+          <span>数据截至 {mockDataset.mockToday}</span>
         </div>
       </section>
       <FilterBar dataset={mockDataset} filters={filters} onChange={setFilters} />
