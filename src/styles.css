@@ -788,10 +788,20 @@ h1 {
   text-align: center;
 }
 
+.kpi-report-panel .dx-datagrid-headers .dx-header-row > td {
+  vertical-align: middle;
+}
+
+.kpi-report-panel .dx-datagrid-headers .dx-datagrid-text-content {
+  width: 100%;
+  text-align: center;
+}
+
 .kpi-report-panel .dx-datagrid-headers .dx-header-row:last-child > td {
   color: var(--muted);
   font-size: 11px;
   font-weight: 750;
+  text-align: center;
 }
 
 .kpi-report-panel .dx-group-row td {
