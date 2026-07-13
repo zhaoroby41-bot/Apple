@@ -72,6 +72,9 @@ export interface RankingRow {
   rank: number;
   dealer: string;
   accountCount: number;
+  activeCount: number;
+  lowActiveCount: number;
+  inactiveCount: number;
   activeAccountRate: number;
   contentCount: number;
   newFans: number;
@@ -82,7 +85,6 @@ export interface RankingRow {
 export interface ActiveDistributionRow {
   key: string;
   dealer: string;
-  platform: string;
   active: number;
   lowActive: number;
   inactive: number;
@@ -299,6 +301,13 @@ function median(values: number[]) {
   return sorted.length % 2 === 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle];
 }
 
+function accountActivityStatus(currentTotals: MetricTotals, engagementMedian: number): ActiveStatus {
+  const hasAnySignal = currentTotals.contentCount > 0 || currentTotals.engagement > 0;
+  if (!hasAnySignal) return "未活跃";
+  if (currentTotals.contentCount < 2 || currentTotals.engagement < engagementMedian) return "低活跃";
+  return "活跃";
+}
+
 function getScopeLabel(dataset: MockDataset, filters: DashboardFilters) {
   const region = dataset.regions.find((item) => item.id === filters.regionId);
   const dealer = dataset.dealers.find((item) => item.id === filters.dealerId);
@@ -410,16 +419,10 @@ export function buildDashboardModel(dataset: MockDataset, filters: DashboardFilt
 
   const statusByAccount = new Map<string, ActiveStatus>();
   accountPeriodTotals.forEach(({ account, currentTotals }) => {
-    const status: ActiveStatus =
-      currentTotals.contentCount > 0 && currentTotals.engagement < engagementMedian
-        ? "低活跃"
-        : currentTotals.contentCount > 0 || currentTotals.engagement > 0
-          ? "活跃"
-          : "未活跃";
-    statusByAccount.set(account.id, status);
+    statusByAccount.set(account.id, accountActivityStatus(currentTotals, engagementMedian));
   });
 
-  const activeCount = Array.from(statusByAccount.values()).filter((status) => status !== "未活跃").length;
+  const activeCount = Array.from(statusByAccount.values()).filter((status) => status === "活跃").length;
   const activeRate = accounts.length === 0 ? 0 : activeCount / accounts.length;
   const uniqueDealers = new Set(accounts.map((account) => account.dealerId));
   const fanTrend = buildTrend(metricsByAccount, accounts, window.currentStart, window.currentEnd);
@@ -434,6 +437,9 @@ export function buildDashboardModel(dataset: MockDataset, filters: DashboardFilt
           rank: 0,
           dealer: dealerMap.get(account.dealerId)?.name ?? account.dealerId,
           accountCount: 0,
+          activeCount: 0,
+          lowActiveCount: 0,
+          inactiveCount: 0,
           activeAccountRate: 0,
           contentCount: 0,
           newFans: 0,
@@ -441,7 +447,10 @@ export function buildDashboardModel(dataset: MockDataset, filters: DashboardFilt
           engagement: 0,
         } satisfies RankingRow);
       existing.accountCount += 1;
-      existing.activeAccountRate += statusByAccount.get(account.id) === "未活跃" ? 0 : 1;
+      const status = statusByAccount.get(account.id);
+      if (status === "活跃") existing.activeCount += 1;
+      else if (status === "低活跃") existing.lowActiveCount += 1;
+      else existing.inactiveCount += 1;
       existing.contentCount += currentTotals.contentCount;
       existing.newFans += currentTotals.newFans;
       existing.readsOrViews += currentTotals.readsOrViews;
@@ -452,16 +461,15 @@ export function buildDashboardModel(dataset: MockDataset, filters: DashboardFilt
     .values();
 
   const dealerRankingRows = Array.from(rankingRows)
-    .map((row) => ({ ...row, activeAccountRate: row.accountCount === 0 ? 0 : row.activeAccountRate / row.accountCount }))
-    .sort((a, b) => b.engagement - a.engagement)
+    .map((row) => ({ ...row, activeAccountRate: row.accountCount === 0 ? 0 : row.activeCount / row.accountCount }))
+    .sort((a, b) => b.activeCount - a.activeCount || b.lowActiveCount - a.lowActiveCount || b.engagement - a.engagement)
     .map((row, index) => ({ ...row, rank: index + 1 }));
 
   const activeDistributionMap = new Map<string, ActiveDistributionRow>();
   accounts.forEach((account) => {
     const dealer = dealerMap.get(account.dealerId)?.name ?? account.dealerId;
-    const platform = platformLabels[account.platform];
-    const key = `${dealer}-${platform}`;
-    const row = activeDistributionMap.get(key) ?? { key, dealer, platform, active: 0, lowActive: 0, inactive: 0 };
+    const key = dealer;
+    const row = activeDistributionMap.get(key) ?? { key, dealer, active: 0, lowActive: 0, inactive: 0 };
     const status = statusByAccount.get(account.id);
     if (status === "低活跃") row.lowActive += 1;
     else if (status === "活跃") row.active += 1;
@@ -559,7 +567,7 @@ export function buildDashboardModel(dataset: MockDataset, filters: DashboardFilt
     engagementTrend,
     fanImpactRows: buildImpactRows(dataset, accounts, metricsByAccount, window, "fans"),
     engagementImpactRows: buildImpactRows(dataset, accounts, metricsByAccount, window, metric),
-    activeDistribution: Array.from(activeDistributionMap.values()),
+    activeDistribution: Array.from(activeDistributionMap.values()).sort((a, b) => b.active - a.active || b.lowActive - a.lowActive),
     rankingRows: dealerRankingRows,
     kpiRows,
     kpiQuarter,

@@ -89,4 +89,16 @@ describe("metrics", () => {
     expect(totals.lowActive).toBeGreaterThan(0);
     expect(totals.inactive).toBeGreaterThan(0);
   });
+
+  it("ranks dealers by active account count descending", () => {
+    const model = buildDashboardModel(
+      mockDataset,
+      { platform: "all", period: "30d", regionId: "all", dealerId: "all", accountId: "all" },
+      "engagement",
+    );
+
+    model.rankingRows.slice(1).forEach((row, index) => {
+      expect(model.rankingRows[index].activeCount).toBeGreaterThanOrEqual(row.activeCount);
+    });
+  });
 });
