@@ -1,4 +1,4 @@
-import Chart, { ArgumentAxis, CommonSeriesSettings, Grid, Legend, Series, Tooltip, ValueAxis } from "devextreme-react/chart";
+import Chart, { ArgumentAxis, CommonSeriesSettings, Grid, Legend, Point, Series, Tooltip, ValueAxis } from "devextreme-react/chart";
 import DataGrid, { Column, Paging, Sorting } from "devextreme-react/data-grid";
 import type { DashboardModel, TrendPoint } from "../lib/metrics";
 import { formatCompactNumber, formatNumber, formatPercent } from "../lib/format";
@@ -45,7 +45,9 @@ export function FanTrendSection({ model }: { model: DashboardModel }) {
       <div className="analysis-grid">
         <article className="panel chart-panel">
           <Chart dataSource={chartRows} palette={["#0071e3", "#1d1d1f", "#8e8e93"]}>
-            <CommonSeriesSettings argumentField="date" type="line" />
+            <CommonSeriesSettings argumentField="date" type="line" width={2}>
+              <Point visible size={4} hoverStyle={{ size: 7 }} />
+            </CommonSeriesSettings>
             {series.map((name) => (
               <Series key={name} valueField={name} name={name} />
             ))}
