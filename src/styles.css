@@ -963,6 +963,19 @@ h1 {
   font-size: 12px;
 }
 
+.impact-delta {
+  font-variant-numeric: tabular-nums;
+  font-weight: 750;
+}
+
+.impact-delta-positive {
+  color: var(--red);
+}
+
+.impact-delta-negative {
+  color: var(--green);
+}
+
 .dx-datagrid {
   max-width: 100%;
   color: var(--ink);

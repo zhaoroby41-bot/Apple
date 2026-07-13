@@ -23,6 +23,11 @@ function activeSeries(points: TrendPoint[]) {
   return Array.from(new Set(points.map((point) => platformField[point.platform])));
 }
 
+function DeltaCell({ value }: { value: number }) {
+  const className = value >= 0 ? "impact-delta-positive" : "impact-delta-negative";
+  return <span className={`impact-delta ${className}`}>{value >= 0 ? "+" : ""}{formatNumber(value)}</span>;
+}
+
 export function FanTrendSection({ model }: { model: DashboardModel }) {
   const chartRows = toWideRows(model.fanTrend, "fans");
   const series = activeSeries(model.fanTrend);
@@ -71,7 +76,7 @@ export function FanTrendSection({ model }: { model: DashboardModel }) {
             <Column dataField="platform" caption="平台" width={76} />
             <Column dataField="current" caption="本周期" dataType="number" format="#,##0" />
             <Column dataField="previous" caption="上周期" dataType="number" format="#,##0" />
-            <Column dataField="delta" caption="差异" dataType="number" format="+#,##0;-#,##0" />
+            <Column dataField="delta" caption="影响" dataType="number" cellRender={(cell) => <DeltaCell value={cell.value} />} />
             <Column dataField="impactShare" caption="影响度" dataType="number" format="percent" />
           </DataGrid>
         </article>
