@@ -964,8 +964,12 @@ h1 {
 }
 
 .impact-delta {
+  display: inline-block;
+  min-width: 72px;
   font-variant-numeric: tabular-nums;
   font-weight: 750;
+  text-align: right;
+  white-space: nowrap;
 }
 
 .impact-delta-positive {
@@ -991,6 +995,13 @@ h1 {
 .dx-datagrid .dx-row > td {
   border-color: rgba(29, 29, 31, 0.07);
   font-size: 12px;
+  white-space: nowrap;
+}
+
+.table-panel .dx-datagrid .dx-row > td:first-child,
+.table-panel .dx-datagrid .dx-header-row > td:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .dx-datagrid-rowsview .dx-row-alt > td {

@@ -69,15 +69,15 @@ export function FanTrendSection({ model }: { model: DashboardModel }) {
             <h3>粉丝变化影响账号</h3>
             <span>按本周期降序</span>
           </div>
-          <DataGrid dataSource={model.fanImpactRows} keyExpr="id" showBorders={false} columnAutoWidth rowAlternationEnabled>
+          <DataGrid dataSource={model.fanImpactRows} keyExpr="id" showBorders={false} rowAlternationEnabled>
             <Sorting mode="single" />
             <Paging defaultPageSize={6} />
             <Column dataField="account" caption="账号" minWidth={180} />
             <Column dataField="platform" caption="平台" width={76} />
-            <Column dataField="current" caption="本周期" dataType="number" format="#,##0" />
-            <Column dataField="previous" caption="上周期" dataType="number" format="#,##0" />
-            <Column dataField="delta" caption="影响" dataType="number" cellRender={(cell) => <DeltaCell value={cell.value} />} />
-            <Column dataField="impactShare" caption="影响度" dataType="number" format="percent" />
+            <Column dataField="current" caption="本周期" dataType="number" format="#,##0" width={86} />
+            <Column dataField="previous" caption="上周期" dataType="number" format="#,##0" width={86} />
+            <Column dataField="delta" caption="影响" dataType="number" width={104} cellRender={(cell) => <DeltaCell value={cell.value} />} />
+            <Column dataField="impactShare" caption="影响度" dataType="number" format="percent" width={72} />
           </DataGrid>
         </article>
       </div>
