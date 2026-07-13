@@ -151,4 +151,18 @@ describe("metrics", () => {
     expect(model.engagementImpactRows.some((row) => row.delta > 0)).toBe(true);
     expect(model.engagementImpactRows.some((row) => row.delta < 0)).toBe(true);
   });
+
+  it("builds team impact rows at dealer and region grain", () => {
+    const model = buildDashboardModel(
+      mockDataset,
+      { platform: "all", period: "30d", regionId: "all", dealerId: "all", accountId: "all", scopeNodeIds: ["root:all"] },
+      "engagement",
+    );
+
+    expect(model.fanTeamImpactRows.length).toBeGreaterThan(0);
+    expect(model.engagementTeamImpactRows.length).toBeGreaterThan(0);
+    expect(model.fanTeamImpactRows.every((row) => row.account.includes(" / "))).toBe(true);
+    expect(model.engagementTeamImpactRows.some((row) => row.dealer === "星辰数码 01" && row.region === "华北")).toBe(true);
+    expect(model.engagementTeamImpactRows.every((row) => row.current > 0)).toBe(true);
+  });
 });

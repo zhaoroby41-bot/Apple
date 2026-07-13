@@ -55,7 +55,7 @@ export interface ImpactRow {
   id: string;
   account: string;
   platform: string;
-  platformId: AccountPlatform;
+  platformId: AccountPlatform | "all";
   region: string;
   dealer: string;
   previous: number;
@@ -128,7 +128,9 @@ export interface DashboardModel {
   fanTrend: TrendPoint[];
   engagementTrend: TrendPoint[];
   fanImpactRows: ImpactRow[];
+  fanTeamImpactRows: ImpactRow[];
   engagementImpactRows: ImpactRow[];
+  engagementTeamImpactRows: ImpactRow[];
   activeDistribution: ActiveDistributionRow[];
   rankingRows: RankingRow[];
   kpiRows: KpiRow[];
@@ -406,6 +408,75 @@ function buildImpactRows(
     .slice(0, 12);
 }
 
+function buildTeamImpactRows(
+  dataset: MockDataset,
+  accounts: StoreAccount[],
+  metricsByAccount: Map<string, DailyMetric[]>,
+  window: PeriodWindow,
+  metric: "fans" | EngagementMetricKey,
+): ImpactRow[] {
+  const regions = new Map(dataset.regions.map((region) => [region.id, region]));
+  const dealers = new Map(dataset.dealers.map((dealer) => [dealer.id, dealer]));
+  const rowsByTeam = new Map<
+    string,
+    {
+      dealer: string;
+      region: string;
+      platforms: Set<AccountPlatform>;
+      current: number;
+      previous: number;
+    }
+  >();
+
+  accounts.forEach((account) => {
+    const metrics = metricsByAccount.get(account.id) ?? [];
+    const currentTotals = aggregateAccountPeriod(metrics, window.currentStart, window.currentEnd);
+    const previousTotals = aggregateAccountPeriod(metrics, window.previousStart, window.previousEnd);
+    const current = metric === "fans" ? currentTotals.fans : metricValue(currentTotals, metric);
+    const previous = metric === "fans" ? previousTotals.fans : metricValue(previousTotals, metric);
+    const dealer = dealers.get(account.dealerId)?.name ?? account.dealerId;
+    const region = regionLabel(regions, account.regionId);
+    const teamKey = `${account.dealerId}:${account.regionId ?? "direct"}`;
+    const row = rowsByTeam.get(teamKey) ?? {
+      dealer,
+      region,
+      platforms: new Set<AccountPlatform>(),
+      current: 0,
+      previous: 0,
+    };
+    row.platforms.add(account.platform);
+    row.current += current;
+    row.previous += previous;
+    rowsByTeam.set(teamKey, row);
+  });
+
+  const visibleRows = Array.from(rowsByTeam.entries())
+    .map(([id, row]) => {
+      const delta = row.current - row.previous;
+      const platforms = Array.from(row.platforms);
+      const platformId: AccountPlatform | "all" = platforms.length === 1 ? platforms[0] : "all";
+      return {
+        id: `team:${id}-${metric}`,
+        account: `${row.dealer} / ${row.region}`,
+        platform: platformId === "all" ? "全平台" : platformLabels[platformId],
+        platformId,
+        region: row.region,
+        dealer: row.dealer,
+        previous: row.previous,
+        current: row.current,
+        delta,
+        percent: row.previous === 0 ? 0 : delta / row.previous,
+        impactShare: 0,
+      };
+    })
+    .filter((row) => row.current > 0);
+  const totalAbsoluteDelta = visibleRows.reduce((sum, row) => sum + Math.abs(row.delta), 0);
+  return visibleRows
+    .map((row) => ({ ...row, impactShare: totalAbsoluteDelta === 0 ? 0 : Math.abs(row.delta) / totalAbsoluteDelta }))
+    .sort((a, b) => b.current - a.current || Math.abs(b.delta) - Math.abs(a.delta))
+    .slice(0, 12);
+}
+
 export function buildDashboardModel(dataset: MockDataset, filters: DashboardFilters, metric: EngagementMetricKey, kpiQuarter: QuarterKey = currentQuarterKey(dataset.mockToday)): DashboardModel {
   const window = getPeriodWindow(filters.period, dataset.mockToday);
   const accounts = filterAccounts(dataset, filters);
@@ -577,7 +648,9 @@ export function buildDashboardModel(dataset: MockDataset, filters: DashboardFilt
     fanTrend,
     engagementTrend,
     fanImpactRows: buildImpactRows(dataset, accounts, metricsByAccount, window, "fans"),
+    fanTeamImpactRows: buildTeamImpactRows(dataset, accounts, metricsByAccount, window, "fans"),
     engagementImpactRows: buildImpactRows(dataset, accounts, metricsByAccount, window, metric),
+    engagementTeamImpactRows: buildTeamImpactRows(dataset, accounts, metricsByAccount, window, metric),
     activeDistribution: Array.from(activeDistributionMap.values()).sort((a, b) => b.active - a.active || b.lowActive - a.lowActive),
     rankingRows: dealerRankingRows,
     kpiRows,

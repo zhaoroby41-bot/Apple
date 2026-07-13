@@ -817,6 +817,34 @@ h1 {
   font-weight: 650;
 }
 
+.panel-title-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  align-items: center;
+}
+
+.panel-title-actions .dx-buttongroup-wrapper {
+  gap: 4px;
+}
+
+.panel-title-actions .dx-button {
+  min-width: 48px;
+  height: 28px;
+  border-color: var(--line);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.panel-title-actions .dx-button.dx-state-active,
+.panel-title-actions .dx-button.dx-state-focused,
+.panel-title-actions .dx-button.dx-item-selected {
+  color: #fff;
+  border-color: var(--ink);
+  background: var(--ink);
+}
+
 .metric-switcher {
   margin: 0 0 12px;
 }

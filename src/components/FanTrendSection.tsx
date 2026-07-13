@@ -1,5 +1,7 @@
 import Chart, { ArgumentAxis, CommonSeriesSettings, Grid, Legend, Point, Series, Tooltip, ValueAxis } from "devextreme-react/chart";
 import DataGrid, { Column, Paging, Sorting } from "devextreme-react/data-grid";
+import ButtonGroup from "devextreme-react/button-group";
+import { useState } from "react";
 import type { DashboardModel, TrendPoint } from "../lib/metrics";
 import { formatCompactNumber, formatNumber, formatPercent } from "../lib/format";
 
@@ -28,11 +30,18 @@ function DeltaCell({ value }: { value: number }) {
   return <span className={`impact-delta ${className}`}>{value >= 0 ? "+" : ""}{formatNumber(value)}</span>;
 }
 
+const impactViewItems = [
+  { key: "account", text: "账号" },
+  { key: "team", text: "团队" },
+];
+
 export function FanTrendSection({ model }: { model: DashboardModel }) {
+  const [impactView, setImpactView] = useState<"account" | "team">("account");
   const chartRows = toWideRows(model.fanTrend, "fans");
   const series = activeSeries(model.fanTrend);
   const delta = model.comparison.delta.fans;
   const percent = model.comparison.percent.fans;
+  const impactRows = impactView === "account" ? model.fanImpactRows : model.fanTeamImpactRows;
 
   return (
     <section className="analysis-section">
@@ -66,13 +75,25 @@ export function FanTrendSection({ model }: { model: DashboardModel }) {
         </article>
         <article className="panel table-panel">
           <div className="panel-title">
-            <h3>粉丝变化影响账号</h3>
-            <span>按本周期降序</span>
+            <h3>{impactView === "account" ? "粉丝变化影响账号" : "粉丝变化影响团队"}</h3>
+            <div className="panel-title-actions">
+              <span>按本周期降序</span>
+              <ButtonGroup
+                items={impactViewItems}
+                keyExpr="key"
+                selectedItemKeys={[impactView]}
+                selectionMode="single"
+                onSelectionChanged={(event) => {
+                  const selected = event.addedItems[0]?.key as "account" | "team" | undefined;
+                  if (selected) setImpactView(selected);
+                }}
+              />
+            </div>
           </div>
-          <DataGrid dataSource={model.fanImpactRows} keyExpr="id" showBorders={false} rowAlternationEnabled>
+          <DataGrid dataSource={impactRows} keyExpr="id" showBorders={false} rowAlternationEnabled>
             <Sorting mode="single" />
             <Paging defaultPageSize={6} />
-            <Column dataField="account" caption="账号" minWidth={180} />
+            <Column dataField="account" caption={impactView === "account" ? "账号" : "团队"} minWidth={180} />
             <Column dataField="platform" caption="平台" width={76} />
             <Column dataField="current" caption="本周期" dataType="number" format="#,##0" width={86} />
             <Column dataField="previous" caption="上周期" dataType="number" format="#,##0" width={86} />
