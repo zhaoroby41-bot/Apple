@@ -72,12 +72,6 @@ function MetricSummaryLine({ label, current, target }: { label: string; current:
   );
 }
 
-function StatusCell({ value }: { value: string }) {
-  const className = value === "On Track" ? "on-track" : value === "Watch" ? "watch" : "at-risk";
-  const label = value === "On Track" ? "达成中" : value === "Watch" ? "关注" : "风险";
-  return <span className={`status-pill ${className}`}>{label}</span>;
-}
-
 function groupSummary(rows: KpiRow[]) {
   return rows
     .reduce<Map<string, KpiGroupSummary>>(
@@ -226,7 +220,6 @@ export function KpiManagementSection({
             <Column dataField="newFansCompletion" caption="完成率" cellRender={(cell) => <ProgressCell value={cell.value} />} width={174} />
           </Column>
           <Column dataField="overallCompletion" caption="综合完成率" cellRender={(cell) => <ProgressCell value={cell.value} />} width={180} sortOrder="asc" />
-          <Column dataField="status" caption="状态" cellRender={(cell) => <StatusCell value={cell.value} />} width={92} />
           <Summary>
             <GroupItem column="dealer" summaryType="count" displayFormat="{0} 家经销商" />
             <GroupItem column="readsCurrent" summaryType="sum" valueFormat="#,##0" displayFormat="{0}" showInGroupFooter alignByColumn />

@@ -104,7 +104,6 @@ export interface KpiRow {
   newFansCurrent: number;
   newFansCompletion: number;
   overallCompletion: number;
-  status: "On Track" | "Watch" | "At Risk";
 }
 
 export interface KpiCardModel {
@@ -330,12 +329,6 @@ function kpiGroupForDealerIndex(index: number) {
   return "四组";
 }
 
-function statusForCompletion(completion: number, expectedQuarterProgress: number): KpiRow["status"] {
-  if (completion >= expectedQuarterProgress - 0.05) return "On Track";
-  if (completion >= expectedQuarterProgress - 0.2) return "Watch";
-  return "At Risk";
-}
-
 function currentQuarterKey(today: string): QuarterKey {
   const date = toDate(today);
   const quarter = Math.floor(date.getUTCMonth() / 3) + 1;
@@ -352,16 +345,7 @@ function getQuarterWindow(quarter: QuarterKey, today: string) {
   return {
     start: toIsoDate(start),
     end: toIsoDate(end),
-    quarterEnd: toIsoDate(quarterEnd),
   };
-}
-
-function getQuarterProgress(quarter: QuarterKey, today: string) {
-  const window = getQuarterWindow(quarter, today);
-  const start = toDate(window.start);
-  const end = toDate(window.end);
-  const quarterEnd = toDate(window.quarterEnd);
-  return (end.getTime() - start.getTime()) / (quarterEnd.getTime() - start.getTime());
 }
 
 function buildImpactRows(
@@ -486,7 +470,6 @@ export function buildDashboardModel(dataset: MockDataset, filters: DashboardFilt
   });
 
   const quarterWindow = getQuarterWindow(kpiQuarter, dataset.mockToday);
-  const expectedQuarterProgress = getQuarterProgress(kpiQuarter, dataset.mockToday);
   const allAccountCountsByDealer = dealerAccountCounts(dataset.accounts);
   const kpiRows = Array.from(
     accountPeriodTotals
@@ -537,7 +520,6 @@ export function buildDashboardModel(dataset: MockDataset, filters: DashboardFilt
       newFansCurrent: totals.newFans,
       newFansCompletion,
       overallCompletion,
-      status: statusForCompletion(overallCompletion, expectedQuarterProgress),
     };
   });
 
