@@ -33,7 +33,7 @@ export function FilterBar({ dataset, filters, onChange, showPeriod = true }: Fil
           value={filters.platform}
           valueExpr="value"
           displayExpr="label"
-          onValueChanged={(event) => onChange({ ...filters, platform: event.value, accountId: "all" })}
+          onValueChanged={(event) => onChange({ ...filters, platform: event.value, dealerId: "all", regionId: "all", accountId: "all" })}
         />
       </div>
       {showPeriod ? (

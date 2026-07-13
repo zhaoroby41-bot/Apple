@@ -59,4 +59,14 @@ describe("metrics", () => {
     expect(q3.kpiWindow).toEqual({ start: "2026-07-01", end: "2026-07-12" });
     expect(q2.kpiRows[0].readsCurrent).not.toBe(q3.kpiRows[0].readsCurrent);
   });
+
+  it("filters dashboard accounts by selected platform", () => {
+    const base = { period: "30d" as const, regionId: "all", dealerId: "all", accountId: "all" };
+    const all = buildDashboardModel(mockDataset, { ...base, platform: "all" }, "engagement");
+    const douyin = buildDashboardModel(mockDataset, { ...base, platform: "douyin" }, "engagement");
+
+    expect(all.accountCount).toBe(200);
+    expect(douyin.accountCount).toBe(mockDataset.accounts.filter((account) => account.platform === "douyin").length);
+    expect(douyin.accountCount).toBeLessThan(all.accountCount);
+  });
 });

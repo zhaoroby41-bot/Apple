@@ -29,13 +29,18 @@ function accountVisibleByPermission(dataset: MockDataset, account: StoreAccount)
   return dataset.currentUser.dealerId === account.dealerId;
 }
 
-function buildTree(dataset: MockDataset): ScopeNode[] {
+function accountVisibleInTree(dataset: MockDataset, filters: DashboardFilters, account: StoreAccount) {
+  if (!accountVisibleByPermission(dataset, account)) return false;
+  return filters.platform === "all" || account.platform === filters.platform;
+}
+
+function buildTree(dataset: MockDataset, filters: DashboardFilters): ScopeNode[] {
   const visibleDealers =
     dataset.currentUser.role === "apple"
       ? dataset.dealers
       : dataset.dealers.filter((dealer) => dealer.id === dataset.currentUser.dealerId);
   const regionMap = new Map(dataset.regions.map((region) => [region.id, region]));
-  const visibleAccounts = dataset.accounts.filter((account) => accountVisibleByPermission(dataset, account));
+  const visibleAccounts = dataset.accounts.filter((account) => accountVisibleInTree(dataset, filters, account));
 
   const dealerNodes: ScopeNode[] = visibleDealers.map((dealer, index) => {
     const dealerAccounts = visibleAccounts.filter((account) => account.dealerId === dealer.id);
@@ -117,7 +122,7 @@ function selectedNodeId(nodes: ScopeNode[], filters: DashboardFilters) {
 }
 
 export function OrganizationScopeTree({ dataset, filters, onChange }: OrganizationScopeTreeProps) {
-  const tree = buildTree(dataset);
+  const tree = buildTree(dataset, filters);
   const nodes = flatten(tree);
 
   function selectNode(node?: ScopeNode) {
