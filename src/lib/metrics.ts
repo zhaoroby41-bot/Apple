@@ -89,9 +89,10 @@ export interface ActiveDistributionRow {
 
 export interface KpiRow {
   id: string;
-  region: string;
+  kpiGroup: string;
+  dealerId: string;
   dealer: string;
-  account: string;
+  accountCount: number;
   readsTarget: number;
   readsCurrent: number;
   readsCompletion: number;
@@ -318,6 +319,13 @@ function dealerAccountCounts(accounts: StoreAccount[]) {
   return counts;
 }
 
+function kpiGroupForDealerIndex(index: number) {
+  if (index < 5) return "一组";
+  if (index < 16) return "二组";
+  if (index < 37) return "三组";
+  return "四组";
+}
+
 function statusForCompletion(completion: number, expectedQuarterProgress: number): KpiRow["status"] {
   if (completion >= expectedQuarterProgress - 0.05) return "On Track";
   if (completion >= expectedQuarterProgress - 0.2) return "Watch";
@@ -382,7 +390,7 @@ export function buildDashboardModel(dataset: MockDataset, filters: DashboardFilt
   const accounts = filterAccounts(dataset, filters);
   const metricsByAccount = groupDailyMetrics(dataset);
   const dealerMap = new Map(dataset.dealers.map((dealer) => [dealer.id, dealer]));
-  const regionMap = new Map(dataset.regions.map((region) => [region.id, region]));
+  const dealerIndexMap = new Map(dataset.dealers.map((dealer, index) => [dealer.id, index]));
 
   const current = emptyTotals();
   const previous = emptyTotals();
@@ -463,38 +471,77 @@ export function buildDashboardModel(dataset: MockDataset, filters: DashboardFilt
   const quarterStart = getQuarterStart(dataset.mockToday);
   const expectedQuarterProgress = getQuarterProgress(dataset.mockToday);
   const allAccountCountsByDealer = dealerAccountCounts(dataset.accounts);
-  const kpiRows = accountPeriodTotals.map(({ account }) => {
-    const dealer = dealerMap.get(account.dealerId) as Dealer;
-    const metrics = metricsByAccount.get(account.id) ?? [];
-    const quarterTotals = aggregateAccountPeriod(metrics, quarterStart, dataset.mockToday);
-    const dealerAccountCount = allAccountCountsByDealer.get(account.dealerId) ?? 1;
-    const readsTarget = dealer.quarterlyKpi.readsOrViews / dealerAccountCount;
-    const engagementTarget = dealer.quarterlyKpi.engagement / dealerAccountCount;
-    const newFansTarget = dealer.quarterlyKpi.newFans / dealerAccountCount;
-    const readsCompletion = Math.min(1.2, quarterTotals.readsOrViews / readsTarget);
-    const engagementCompletion = Math.min(1.2, quarterTotals.engagement / engagementTarget);
-    const newFansCompletion = Math.min(1.2, quarterTotals.newFans / newFansTarget);
+  const kpiRows = Array.from(
+    accountPeriodTotals
+      .reduce<
+        Map<
+          string,
+          {
+            dealer: Dealer;
+            accountCount: number;
+            totals: MetricTotals;
+          }
+        >
+      >((rows, { account }) => {
+        const dealer = dealerMap.get(account.dealerId) as Dealer;
+        const row = rows.get(account.dealerId) ?? { dealer, accountCount: 0, totals: emptyTotals() };
+        const metrics = metricsByAccount.get(account.id) ?? [];
+        const quarterTotals = aggregateAccountPeriod(metrics, quarterStart, dataset.mockToday);
+        row.accountCount += 1;
+        addTotals(row.totals, quarterTotals);
+        rows.set(account.dealerId, row);
+        return rows;
+      }, new Map())
+      .values(),
+  ).map(({ dealer, accountCount, totals }) => {
+    const dealerIndex = dealerIndexMap.get(dealer.id) ?? 0;
+    const dealerAccountCount = allAccountCountsByDealer.get(dealer.id) ?? accountCount;
+    const visibleShare = dealerAccountCount === 0 ? 1 : accountCount / dealerAccountCount;
+    const readsTarget = dealer.quarterlyKpi.readsOrViews * visibleShare;
+    const engagementTarget = dealer.quarterlyKpi.engagement * visibleShare;
+    const newFansTarget = dealer.quarterlyKpi.newFans * visibleShare;
+    const readsCompletion = readsTarget === 0 ? 0 : totals.readsOrViews / readsTarget;
+    const engagementCompletion = engagementTarget === 0 ? 0 : totals.engagement / engagementTarget;
+    const newFansCompletion = newFansTarget === 0 ? 0 : totals.newFans / newFansTarget;
     const overallCompletion = (readsCompletion + engagementCompletion + newFansCompletion) / 3;
     return {
-      id: `kpi-${account.id}`,
-      region: regionLabel(regionMap, account.regionId),
+      id: `kpi-${dealer.id}`,
+      kpiGroup: kpiGroupForDealerIndex(dealerIndex),
+      dealerId: dealer.id,
       dealer: dealer.name,
-      account: account.name,
+      accountCount,
       readsTarget,
-      readsCurrent: quarterTotals.readsOrViews,
+      readsCurrent: totals.readsOrViews,
       readsCompletion,
       engagementTarget,
-      engagementCurrent: quarterTotals.engagement,
+      engagementCurrent: totals.engagement,
       engagementCompletion,
       newFansTarget,
-      newFansCurrent: quarterTotals.newFans,
+      newFansCurrent: totals.newFans,
       newFansCompletion,
       overallCompletion,
       status: statusForCompletion(overallCompletion, expectedQuarterProgress),
     };
   });
 
-  const quarterlyKpiCompletion = kpiRows.length === 0 ? 0 : kpiRows.reduce((sum, row) => sum + row.overallCompletion, 0) / kpiRows.length;
+  const kpiTotals = kpiRows.reduce(
+    (totals, row) => ({
+      readsTarget: totals.readsTarget + row.readsTarget,
+      readsCurrent: totals.readsCurrent + row.readsCurrent,
+      engagementTarget: totals.engagementTarget + row.engagementTarget,
+      engagementCurrent: totals.engagementCurrent + row.engagementCurrent,
+      newFansTarget: totals.newFansTarget + row.newFansTarget,
+      newFansCurrent: totals.newFansCurrent + row.newFansCurrent,
+    }),
+    { readsTarget: 0, readsCurrent: 0, engagementTarget: 0, engagementCurrent: 0, newFansTarget: 0, newFansCurrent: 0 },
+  );
+  const quarterlyKpiCompletion =
+    kpiRows.length === 0
+      ? 0
+      : ((kpiTotals.readsTarget === 0 ? 0 : kpiTotals.readsCurrent / kpiTotals.readsTarget) +
+          (kpiTotals.engagementTarget === 0 ? 0 : kpiTotals.engagementCurrent / kpiTotals.engagementTarget) +
+          (kpiTotals.newFansTarget === 0 ? 0 : kpiTotals.newFansCurrent / kpiTotals.newFansTarget)) /
+        3;
 
   return {
     window,

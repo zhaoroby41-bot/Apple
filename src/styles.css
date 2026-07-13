@@ -605,6 +605,83 @@ h1 {
   padding: 16px;
 }
 
+.kpi-report-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 12px;
+}
+
+.kpi-report-summary article {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(249, 249, 251, 0.9)),
+    #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.026);
+}
+
+.kpi-report-summary article > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.kpi-report-summary span,
+.kpi-report-summary small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.kpi-report-summary strong {
+  color: var(--ink);
+  font-size: 24px;
+  font-weight: 650;
+  line-height: 1;
+}
+
+.kpi-report-summary p {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 7px 0 0;
+  color: #424245;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.kpi-report-panel .dx-datagrid-headers .dx-header-row:first-child > td {
+  color: var(--ink);
+  background: rgba(245, 245, 247, 0.74);
+  font-size: 12px;
+  font-weight: 750;
+  text-align: center;
+}
+
+.kpi-report-panel .dx-datagrid-headers .dx-header-row:last-child > td {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.kpi-report-panel .dx-group-row td {
+  color: var(--ink);
+  background: rgba(0, 113, 227, 0.055);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.kpi-report-panel .dx-datagrid-total-footer td,
+.kpi-report-panel .dx-datagrid-group-footer td {
+  color: var(--ink);
+  background: rgba(245, 245, 247, 0.78);
+  font-weight: 750;
+}
+
 .progress-cell {
   display: grid;
   grid-template-columns: minmax(76px, 1fr) 58px;
@@ -705,6 +782,7 @@ h1 {
   .hero-metrics,
   .dashboard-workspace,
   .kpi-grid,
+  .kpi-report-summary,
   .analysis-grid,
   .section-heading {
     grid-template-columns: 1fr;
@@ -837,6 +915,10 @@ h1 {
   }
 
   .kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .kpi-report-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { mockDataset } from "../data/mockData";
-import { getPeriodWindow, sumEngagement } from "./metrics";
+import { buildDashboardModel, getPeriodWindow, sumEngagement } from "./metrics";
 
 describe("metrics", () => {
   it("returns a 7 day current window and matching previous window", () => {
@@ -29,5 +29,23 @@ describe("metrics", () => {
     expect(countsByRegion.north).toBe(10);
     expect(countsByRegion.east).toBe(2);
     expect(mockDataset.accounts.some((account) => account.regionId === null)).toBe(true);
+  });
+
+  it("models quarterly KPI report at dealer group grain", () => {
+    const model = buildDashboardModel(
+      mockDataset,
+      { platform: "all", period: "30d", regionId: "all", dealerId: "all", accountId: "all" },
+      "engagement",
+    );
+    const countsByGroup = model.kpiRows.reduce<Record<string, number>>((counts, row) => {
+      counts[row.kpiGroup] = (counts[row.kpiGroup] ?? 0) + 1;
+      return counts;
+    }, {});
+
+    expect(model.kpiRows).toHaveLength(55);
+    expect(countsByGroup["一组"]).toBe(5);
+    expect(countsByGroup["二组"]).toBe(11);
+    expect(countsByGroup["三组"]).toBe(21);
+    expect(countsByGroup["四组"]).toBe(18);
   });
 });
