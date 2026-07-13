@@ -39,8 +39,6 @@ export default function App() {
           </div>
         </div>
         <div className="command-context" aria-label="Current data context">
-          <span>{mockDataset.currentUser.role === "apple" ? "Apple 全域可见" : "经销商权限"}</span>
-          <span>{model.scopeLabel}</span>
           <span>{model.dealerCount} 家经销商 / {model.accountCount} 个账号</span>
           <span>数据截至 {mockDataset.mockToday}</span>
         </div>
