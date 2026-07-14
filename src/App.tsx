@@ -70,7 +70,7 @@ export default function App() {
               dataset={mockDataset}
               model={model}
               platform={filters.platform}
-              onPlatformChange={(platform) => setFilters({ ...filters, platform, dealerId: "all", regionId: "all", accountId: "all" })}
+              onPlatformChange={(platform) => setFilters({ ...filters, platform, dealerId: "all", regionId: "all", accountId: "all", scopeNodeIds: ["root:all"] })}
               quarter={kpiQuarter}
               onQuarterChange={setKpiQuarter}
             />
