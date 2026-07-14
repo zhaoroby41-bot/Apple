@@ -92,6 +92,7 @@ function selectedKeys(filters: DashboardFilters) {
 
 export function OrganizationScopeTree({ dataset, filters, onChange, collapsed, onToggleCollapsed }: OrganizationScopeTreeProps) {
   const rows = buildRows(dataset, filters);
+  const defaultExpandedRowKeys = dataset.currentUser.role === "apple" ? ["root:all"] : [];
 
   function changeSelection(keys: string[], currentSelectedKeys: string[]) {
     const normalized = normalizeSelection(keys, currentSelectedKeys);
@@ -131,7 +132,7 @@ export function OrganizationScopeTree({ dataset, filters, onChange, collapsed, o
         keyExpr="id"
         parentIdExpr="parentId"
         rootValue={null}
-        autoExpandAll
+        defaultExpandedRowKeys={defaultExpandedRowKeys}
         showColumnHeaders={false}
         showBorders={false}
         columnAutoWidth={false}

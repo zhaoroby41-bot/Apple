@@ -28,9 +28,9 @@ export const platformOptions: Array<{ value: Platform; label: string }> = [
 
 export const initialDealerGroups: DealerGroupSetting[] = [
   { id: "group-1", name: "一组", dealerIds: ["dealer-1", "dealer-2", "dealer-3", "dealer-4", "dealer-5"] },
-  { id: "group-2", name: "二组", dealerIds: ["dealer-6", "dealer-7", "dealer-8", "dealer-9", "dealer-10", "dealer-11"] },
-  { id: "group-3", name: "三组", dealerIds: ["dealer-12", "dealer-13", "dealer-14", "dealer-15", "dealer-16", "dealer-17", "dealer-18"] },
-  { id: "group-4", name: "四组", dealerIds: ["dealer-19", "dealer-20", "dealer-21", "dealer-22", "dealer-23", "dealer-24"] },
+  { id: "group-2", name: "二组", dealerIds: ["dealer-6", "dealer-7", "dealer-8", "dealer-9", "dealer-10", "dealer-11", "dealer-12", "dealer-13", "dealer-14", "dealer-15", "dealer-16"] },
+  { id: "group-3", name: "三组", dealerIds: ["dealer-17", "dealer-18", "dealer-19", "dealer-20", "dealer-21", "dealer-22", "dealer-23", "dealer-24", "dealer-25", "dealer-26", "dealer-27", "dealer-28", "dealer-29", "dealer-30", "dealer-31", "dealer-32", "dealer-33", "dealer-34", "dealer-35", "dealer-36", "dealer-37"] },
+  { id: "group-4", name: "四组", dealerIds: ["dealer-38", "dealer-39", "dealer-40", "dealer-41", "dealer-42", "dealer-43", "dealer-44", "dealer-45", "dealer-46", "dealer-47", "dealer-48", "dealer-49", "dealer-50", "dealer-51", "dealer-52", "dealer-53", "dealer-54", "dealer-55"] },
 ];
 
 export const initialKpiTargets: KpiTargetSetting[] = [

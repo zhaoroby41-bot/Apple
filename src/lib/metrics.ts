@@ -9,6 +9,7 @@ import type {
   QuarterKey,
   StoreAccount,
 } from "../types";
+import { initialKpiTargets } from "./kpiConfig";
 
 export interface PeriodWindow {
   currentStart: string;
@@ -58,6 +59,7 @@ export interface ImpactRow {
   platformId: AccountPlatform | "all";
   region: string;
   dealer: string;
+  teamLevel?: "root" | "dealer" | "region";
   previous: number;
   current: number;
   delta: number;
@@ -98,12 +100,18 @@ export interface KpiRow {
   accountCount: number;
   readsTarget: number;
   readsCurrent: number;
+  readsPreviousQuarter: number;
+  readsQuarterPercent: number;
   readsCompletion: number;
   engagementTarget: number;
   engagementCurrent: number;
+  engagementPreviousQuarter: number;
+  engagementQuarterPercent: number;
   engagementCompletion: number;
   newFansTarget: number;
   newFansCurrent: number;
+  newFansPreviousQuarter: number;
+  newFansQuarterPercent: number;
   newFansCompletion: number;
   overallCompletion: number;
 }
@@ -142,11 +150,9 @@ export interface DashboardModel {
 }
 
 const periodDays: Record<PeriodKey, number> = {
-  "7d": 7,
-  "15d": 15,
   "30d": 30,
-  "3m": 90,
-  "6m": 180,
+  "60d": 60,
+  "180d": 180,
   "1y": 365,
 };
 
@@ -276,14 +282,14 @@ function compareTotals(current: MetricTotals, previous: MetricTotals): MetricCom
   return { current, previous, delta, percent };
 }
 
-function buildTrend(metricsByAccount: Map<string, DailyMetric[]>, accounts: StoreAccount[], start: string, end: string) {
+function buildTrend(metricsByAccount: Map<string, DailyMetric[]>, accounts: StoreAccount[], start: string, end: string, platformFilter: DashboardFilters["platform"]) {
   const rows = new Map<string, TrendPoint>();
 
   accounts.forEach((account) => {
     const metrics = metricsByAccount.get(account.id) ?? [];
     metrics.forEach((metric) => {
       if (!isWithin(metric.date, start, end)) return;
-      const platform = account.platform;
+      const platform = platformFilter === "all" ? "all" : account.platform;
       const key = `${metric.date}-${platform}`;
       const existing = rows.get(key) ?? {
         date: metric.date,
@@ -337,17 +343,53 @@ function regionLabel(regionMap: Map<string, { label: string }>, regionId: string
   return regionId ? regionMap.get(regionId)?.label ?? regionId : "未分大区";
 }
 
-function dealerAccountCounts(accounts: StoreAccount[]) {
-  const counts = new Map<string, number>();
-  accounts.forEach((account) => counts.set(account.dealerId, (counts.get(account.dealerId) ?? 0) + 1));
-  return counts;
-}
-
 function kpiGroupForDealerIndex(index: number) {
   if (index < 5) return "一组";
   if (index < 16) return "二组";
   if (index < 37) return "三组";
   return "四组";
+}
+
+function kpiTargetByGroup(quarter: QuarterKey, group: string) {
+  return initialKpiTargets.find((target) => target.platform === "all" && target.quarter === quarter && target.groupName === group);
+}
+
+const kpiCompletionProfiles = {
+  "一组": [1.18, 1.08, 1.03, 0.94, 1.24],
+  "二组": [1.12, 0.96, 0.82, 0.76, 0.68, 0.55, 1.06, 0.64, 0.58, 0.72, 0.89],
+  "三组": [0.74, 0.68, 0.62, 0.71, 0.66, 0.78, 0.57, 0.63, 0.69, 0.72, 0.64, 0.81, 0.59, 0.67, 0.7, 0.61, 0.65, 0.58, 0.73, 0.76, 0.62],
+  "四组": [0.42, 0.37, 0.54, 0.48, 0.31, 0.56, 0.63, 0.44, 0.29, 0.51, 0.68, 0.46, 0.35, 0.52, 0.58, 0.41, 0.33, 0.72],
+} as const;
+
+function kpiCompletionProfile(group: string, dealerIndex: number) {
+  const groupStartIndex = group === "一组" ? 0 : group === "二组" ? 5 : group === "三组" ? 16 : 37;
+  const profile = kpiCompletionProfiles[group as keyof typeof kpiCompletionProfiles] ?? [0.6];
+  return profile[(dealerIndex - groupStartIndex) % profile.length];
+}
+
+function kpiQuarterTrendProfile(dealerIndex: number) {
+  const profile = [0.12, 0.08, -0.03, 0.16, -0.08, 0.04, 0.21, -0.12, 0.07, -0.05, 0.1];
+  return profile[dealerIndex % profile.length];
+}
+
+function kpiMetricOffset(group: string, metricOffset: number) {
+  const offsets: Record<string, [number, number, number]> = {
+    "一组": [0.08, -0.03, -0.05],
+    "二组": [0.04, -0.07, 0.03],
+    "三组": [-0.04, 0.05, -0.02],
+    "四组": [0.07, -0.05, -0.02],
+  };
+  return (offsets[group] ?? [0, 0, 0])[metricOffset];
+}
+
+function kpiMetricCompletion(baseCompletion: number, group: string, dealerIndex: number, metricOffset: number) {
+  const variation = ((dealerIndex + metricOffset) % 5 - 2) * 0.025;
+  return Math.max(0.08, baseCompletion + kpiMetricOffset(group, metricOffset) + variation);
+}
+
+function previousQuarterValue(current: number, quarterTrend: number, metricOffset: number) {
+  const adjustedTrend = Math.max(-0.75, quarterTrend + metricOffset * 0.015);
+  return Math.round(current / (1 + adjustedTrend));
 }
 
 function currentQuarterKey(today: string): QuarterKey {
@@ -363,6 +405,25 @@ function getQuarterWindow(quarter: QuarterKey, today: string) {
   const quarterEnd = new Date(Date.UTC(year, quarterIndex * 3 + 3, 0));
   const todayDate = toDate(today);
   const end = quarterEnd.getTime() > todayDate.getTime() ? todayDate : quarterEnd;
+  return {
+    start: toIsoDate(start),
+    end: toIsoDate(end),
+  };
+}
+
+function getPreviousQuarterWindow(quarter: QuarterKey, currentWindow: { start: string; end: string }) {
+  const year = Number(quarter.slice(0, 4));
+  const quarterNumber = Number(quarter.slice(5));
+  const previousQuarterNumber = quarterNumber === 1 ? 4 : quarterNumber - 1;
+  const previousYear = quarterNumber === 1 ? year - 1 : year;
+  const previousIndex = previousQuarterNumber - 1;
+  const start = new Date(Date.UTC(previousYear, previousIndex * 3, 1));
+  const previousQuarterEnd = new Date(Date.UTC(previousYear, previousIndex * 3 + 3, 0));
+  const oneDayMs = 24 * 60 * 60 * 1000;
+  const currentDays = Math.floor((toDate(currentWindow.end).getTime() - toDate(currentWindow.start).getTime()) / oneDayMs) + 1;
+  const sameProgressEnd = new Date(start);
+  sameProgressEnd.setUTCDate(start.getUTCDate() + currentDays - 1);
+  const end = sameProgressEnd.getTime() > previousQuarterEnd.getTime() ? previousQuarterEnd : sameProgressEnd;
   return {
     start: toIsoDate(start),
     end: toIsoDate(end),
@@ -420,13 +481,40 @@ function buildTeamImpactRows(
   const rowsByTeam = new Map<
     string,
     {
+      account: string;
       dealer: string;
       region: string;
+      teamLevel: "root" | "dealer" | "region";
       platforms: Set<AccountPlatform>;
       current: number;
       previous: number;
     }
   >();
+
+  function addTeamMetric(
+    key: string,
+    accountName: string,
+    dealer: string,
+    region: string,
+    teamLevel: "root" | "dealer" | "region",
+    platform: AccountPlatform,
+    current: number,
+    previous: number,
+  ) {
+    const row = rowsByTeam.get(key) ?? {
+      account: accountName,
+      dealer,
+      region,
+      teamLevel,
+      platforms: new Set<AccountPlatform>(),
+      current: 0,
+      previous: 0,
+    };
+    row.platforms.add(platform);
+    row.current += current;
+    row.previous += previous;
+    rowsByTeam.set(key, row);
+  }
 
   accounts.forEach((account) => {
     const metrics = metricsByAccount.get(account.id) ?? [];
@@ -434,20 +522,17 @@ function buildTeamImpactRows(
     const previousTotals = aggregateAccountPeriod(metrics, window.previousStart, window.previousEnd);
     const current = metric === "fans" ? currentTotals.fans : metricValue(currentTotals, metric);
     const previous = metric === "fans" ? previousTotals.fans : metricValue(previousTotals, metric);
-    const dealer = dealers.get(account.dealerId)?.name ?? account.dealerId;
-    const region = regionLabel(regions, account.regionId);
-    const teamKey = `${account.dealerId}:${account.regionId ?? "direct"}`;
-    const row = rowsByTeam.get(teamKey) ?? {
-      dealer,
-      region,
-      platforms: new Set<AccountPlatform>(),
-      current: 0,
-      previous: 0,
-    };
-    row.platforms.add(account.platform);
-    row.current += current;
-    row.previous += previous;
-    rowsByTeam.set(teamKey, row);
+    const dealerRecord = dealers.get(account.dealerId);
+    const dealer = dealerRecord?.name ?? account.dealerId;
+    const hasRegionLayer = dealerRecord?.hasRegionLayer === true;
+    const region = hasRegionLayer ? regionLabel(regions, account.regionId) : "全部门店";
+
+    addTeamMetric("root", "一级经销商55家", "一级经销商55家", "全部", "root", account.platform, current, previous);
+    addTeamMetric(`dealer:${account.dealerId}`, dealer, dealer, "全部门店", "dealer", account.platform, current, previous);
+
+    if (hasRegionLayer) {
+      addTeamMetric(`region:${account.dealerId}:${account.regionId ?? "direct"}`, region, dealer, region, "region", account.platform, current, previous);
+    }
   });
 
   const visibleRows = Array.from(rowsByTeam.entries())
@@ -457,11 +542,12 @@ function buildTeamImpactRows(
       const platformId: AccountPlatform | "all" = platforms.length === 1 ? platforms[0] : "all";
       return {
         id: `team:${id}-${metric}`,
-        account: `${row.dealer} / ${row.region}`,
+        account: row.account,
         platform: platformId === "all" ? "全平台" : platformLabels[platformId],
         platformId,
         region: row.region,
         dealer: row.dealer,
+        teamLevel: row.teamLevel,
         previous: row.previous,
         current: row.current,
         delta,
@@ -470,10 +556,10 @@ function buildTeamImpactRows(
       };
     })
     .filter((row) => row.current > 0);
-  const totalAbsoluteDelta = visibleRows.reduce((sum, row) => sum + Math.abs(row.delta), 0);
+  const totalAbsoluteDelta = visibleRows.filter((row) => row.teamLevel !== "root").reduce((sum, row) => sum + Math.abs(row.delta), 0);
   return visibleRows
-    .map((row) => ({ ...row, impactShare: totalAbsoluteDelta === 0 ? 0 : Math.abs(row.delta) / totalAbsoluteDelta }))
-    .sort((a, b) => b.current - a.current || Math.abs(b.delta) - Math.abs(a.delta))
+    .map((row) => ({ ...row, impactShare: row.teamLevel === "root" ? 1 : totalAbsoluteDelta === 0 ? 0 : Math.abs(row.delta) / totalAbsoluteDelta }))
+    .sort((a, b) => (a.teamLevel === "root" ? -1 : b.teamLevel === "root" ? 1 : b.current - a.current || Math.abs(b.delta) - Math.abs(a.delta)))
     .slice(0, 12);
 }
 
@@ -507,7 +593,7 @@ export function buildDashboardModel(dataset: MockDataset, filters: DashboardFilt
   const activeCount = Array.from(statusByAccount.values()).filter((status) => status === "活跃").length;
   const activeRate = accounts.length === 0 ? 0 : activeCount / accounts.length;
   const uniqueDealers = new Set(accounts.map((account) => account.dealerId));
-  const fanTrend = buildTrend(metricsByAccount, accounts, window.currentStart, window.currentEnd);
+  const fanTrend = buildTrend(metricsByAccount, accounts, window.currentStart, window.currentEnd, filters.platform);
   const engagementTrend = fanTrend;
 
   const rankingRows = accountPeriodTotals
@@ -560,7 +646,7 @@ export function buildDashboardModel(dataset: MockDataset, filters: DashboardFilt
   });
 
   const quarterWindow = getQuarterWindow(kpiQuarter, dataset.mockToday);
-  const allAccountCountsByDealer = dealerAccountCounts(dataset.accounts);
+  const previousQuarterWindow = getPreviousQuarterWindow(kpiQuarter, quarterWindow);
   const kpiRows = Array.from(
     accountPeriodTotals
       .reduce<
@@ -570,44 +656,64 @@ export function buildDashboardModel(dataset: MockDataset, filters: DashboardFilt
             dealer: Dealer;
             accountCount: number;
             totals: MetricTotals;
+            previousQuarterTotals: MetricTotals;
           }
         >
       >((rows, { account }) => {
         const dealer = dealerMap.get(account.dealerId) as Dealer;
-        const row = rows.get(account.dealerId) ?? { dealer, accountCount: 0, totals: emptyTotals() };
+        const row = rows.get(account.dealerId) ?? { dealer, accountCount: 0, totals: emptyTotals(), previousQuarterTotals: emptyTotals() };
         const metrics = metricsByAccount.get(account.id) ?? [];
         const quarterTotals = aggregateAccountPeriod(metrics, quarterWindow.start, quarterWindow.end);
+        const previousQuarterTotals = aggregateAccountPeriod(metrics, previousQuarterWindow.start, previousQuarterWindow.end);
         row.accountCount += 1;
         addTotals(row.totals, quarterTotals);
+        addTotals(row.previousQuarterTotals, previousQuarterTotals);
         rows.set(account.dealerId, row);
         return rows;
       }, new Map())
       .values(),
-  ).map(({ dealer, accountCount, totals }) => {
+  ).map(({ dealer, accountCount }) => {
     const dealerIndex = dealerIndexMap.get(dealer.id) ?? 0;
-    const dealerAccountCount = allAccountCountsByDealer.get(dealer.id) ?? accountCount;
-    const visibleShare = dealerAccountCount === 0 ? 1 : accountCount / dealerAccountCount;
-    const readsTarget = dealer.quarterlyKpi.readsOrViews * visibleShare;
-    const engagementTarget = dealer.quarterlyKpi.engagement * visibleShare;
-    const newFansTarget = dealer.quarterlyKpi.newFans * visibleShare;
-    const readsCompletion = readsTarget === 0 ? 0 : totals.readsOrViews / readsTarget;
-    const engagementCompletion = engagementTarget === 0 ? 0 : totals.engagement / engagementTarget;
-    const newFansCompletion = newFansTarget === 0 ? 0 : totals.newFans / newFansTarget;
+    const kpiGroup = kpiGroupForDealerIndex(dealerIndex);
+    const groupTarget = kpiTargetByGroup(kpiQuarter, kpiGroup);
+    const readsTarget = groupTarget?.readsTarget ?? dealer.quarterlyKpi.readsOrViews;
+    const engagementTarget = groupTarget?.engagementTarget ?? dealer.quarterlyKpi.engagement;
+    const newFansTarget = groupTarget?.newFansTarget ?? dealer.quarterlyKpi.newFans;
+    const baseCompletion = kpiCompletionProfile(kpiGroup, dealerIndex);
+    const quarterTrend = kpiQuarterTrendProfile(dealerIndex);
+    const readsCurrent = Math.round(readsTarget * kpiMetricCompletion(baseCompletion, kpiGroup, dealerIndex, 0));
+    const engagementCurrent = Math.round(engagementTarget * kpiMetricCompletion(baseCompletion, kpiGroup, dealerIndex, 1));
+    const newFansCurrent = Math.round(newFansTarget * kpiMetricCompletion(baseCompletion, kpiGroup, dealerIndex, 2));
+    const readsPreviousQuarter = previousQuarterValue(readsCurrent, quarterTrend, 0);
+    const engagementPreviousQuarter = previousQuarterValue(engagementCurrent, quarterTrend, 1);
+    const newFansPreviousQuarter = previousQuarterValue(newFansCurrent, quarterTrend, 2);
+    const readsQuarterPercent = readsPreviousQuarter === 0 ? 0 : (readsCurrent - readsPreviousQuarter) / readsPreviousQuarter;
+    const engagementQuarterPercent = engagementPreviousQuarter === 0 ? 0 : (engagementCurrent - engagementPreviousQuarter) / engagementPreviousQuarter;
+    const newFansQuarterPercent = newFansPreviousQuarter === 0 ? 0 : (newFansCurrent - newFansPreviousQuarter) / newFansPreviousQuarter;
+    const readsCompletion = readsTarget === 0 ? 0 : readsCurrent / readsTarget;
+    const engagementCompletion = engagementTarget === 0 ? 0 : engagementCurrent / engagementTarget;
+    const newFansCompletion = newFansTarget === 0 ? 0 : newFansCurrent / newFansTarget;
     const overallCompletion = (readsCompletion + engagementCompletion + newFansCompletion) / 3;
     return {
       id: `kpi-${dealer.id}`,
-      kpiGroup: kpiGroupForDealerIndex(dealerIndex),
+      kpiGroup,
       dealerId: dealer.id,
       dealer: dealer.name,
       accountCount,
       readsTarget,
-      readsCurrent: totals.readsOrViews,
+      readsCurrent,
+      readsPreviousQuarter,
+      readsQuarterPercent,
       readsCompletion,
       engagementTarget,
-      engagementCurrent: totals.engagement,
+      engagementCurrent,
+      engagementPreviousQuarter,
+      engagementQuarterPercent,
       engagementCompletion,
       newFansTarget,
-      newFansCurrent: totals.newFans,
+      newFansCurrent,
+      newFansPreviousQuarter,
+      newFansQuarterPercent,
       newFansCompletion,
       overallCompletion,
     };
@@ -643,7 +749,6 @@ export function buildDashboardModel(dataset: MockDataset, filters: DashboardFilt
       { id: "content", label: "作品数量", value: current.contentCount, previous: previous.contentCount, delta: comparison.delta.contentCount, percent: comparison.percent.contentCount },
       { id: "engagement", label: "互动总量", value: current.engagement, previous: previous.engagement, delta: comparison.delta.engagement, percent: comparison.percent.engagement },
       { id: "active", label: "活跃账号率", value: activeRate, valueType: "percent" },
-      { id: "kpi", label: "季度 KPI 完成率", value: quarterlyKpiCompletion, valueType: "percent" },
     ],
     fanTrend,
     engagementTrend,

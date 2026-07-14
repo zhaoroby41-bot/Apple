@@ -3,7 +3,8 @@ import DataGrid, { Column, Paging, Sorting } from "devextreme-react/data-grid";
 import ButtonGroup from "devextreme-react/button-group";
 import { useState } from "react";
 import type { EngagementMetricKey } from "../types";
-import type { DashboardModel, TrendPoint } from "../lib/metrics";
+import type { DashboardModel, ImpactRow, TrendPoint } from "../lib/metrics";
+import { applyTrendAreaGradients } from "../lib/chartGradients";
 import { formatCompactNumber, formatNumber, formatPercent } from "../lib/format";
 
 const platformField = {
@@ -11,6 +12,8 @@ const platformField = {
   xiaohongshu: "小红书",
   douyin: "抖音",
 } as const;
+
+const chartPalette = ["#0071e3", "#1d1d1f", "#8e8e93"];
 
 const metricItems: Array<{ key: EngagementMetricKey; text: string }> = [
   { key: "engagement", text: "互动量" },
@@ -38,6 +41,10 @@ function activeSeries(points: TrendPoint[]) {
 function DeltaCell({ value }: { value: number }) {
   const className = value >= 0 ? "impact-delta-positive" : "impact-delta-negative";
   return <span className={`impact-delta ${className}`}>{value >= 0 ? "+" : ""}{formatNumber(value)}</span>;
+}
+
+function TeamCell({ row }: { row: ImpactRow }) {
+  return <span className={`team-cell team-cell-${row.teamLevel ?? "dealer"}`}>{row.account}</span>;
 }
 
 const impactViewItems = [
@@ -71,9 +78,10 @@ export function EngagementTrendSection({
           <h2>作品与互动趋势</h2>
         </div>
         <p>
-          本周期{metricLabel} {formatCompactNumber(current)}，较上一周期
+          本周期{metricLabel} <strong>{formatCompactNumber(current)}</strong>，较上一周期
           {delta >= 0 ? " 增加 " : " 减少 "}
-          {formatNumber(Math.abs(delta))}，环比 {formatPercent(percent)}。
+          <strong className={delta >= 0 ? "summary-positive" : "summary-negative"}>{delta >= 0 ? "+" : "-"}{formatNumber(Math.abs(delta))}</strong>，环比{" "}
+          <strong className={percent >= 0 ? "summary-positive" : "summary-negative"}>{formatPercent(percent)}</strong>。
         </p>
       </div>
       <div className="metric-switcher">
@@ -90,12 +98,32 @@ export function EngagementTrendSection({
       </div>
       <div className="analysis-grid">
         <article className="panel chart-panel">
-          <Chart dataSource={chartRows} palette={["#0071e3", "#1d1d1f", "#8e8e93"]}>
-            <CommonSeriesSettings argumentField="date" type="line" width={2}>
-              <Point visible size={4} hoverStyle={{ size: 7 }} />
-            </CommonSeriesSettings>
-            {series.map((name) => (
-              <Series key={name} valueField={name} name={name} />
+          <Chart dataSource={chartRows} palette={chartPalette} onDrawn={(event) => applyTrendAreaGradients(event.element)}>
+            <CommonSeriesSettings argumentField="date" />
+            {series.map((name, index) => (
+              <Series
+                key={`${name}-shadow`}
+                valueField={name}
+                name={name}
+                type="area"
+                color={chartPalette[index % chartPalette.length]}
+                opacity={0.12}
+                showInLegend={false}
+                border={{ visible: false }}
+                point={{ visible: false }}
+              />
+            ))}
+            {series.map((name, index) => (
+              <Series
+                key={name}
+                valueField={name}
+                name={name}
+                type="line"
+                width={2}
+                color={chartPalette[index % chartPalette.length]}
+              >
+                <Point visible size={3} hoverStyle={{ size: 6 }} />
+              </Series>
             ))}
             <ArgumentAxis argumentType="string" tickInterval={4} />
             <ValueAxis>
@@ -124,8 +152,12 @@ export function EngagementTrendSection({
           </div>
           <DataGrid dataSource={impactRows} keyExpr="id" showBorders={false} rowAlternationEnabled>
             <Sorting mode="single" />
-            <Paging defaultPageSize={6} />
-            <Column dataField="account" caption={impactView === "account" ? "账号" : "团队"} minWidth={180} />
+            <Paging defaultPageSize={8} />
+            {impactView === "account" ? (
+              <Column dataField="account" caption="账号" minWidth={180} />
+            ) : (
+              <Column dataField="account" caption="团队" minWidth={180} cellRender={(cell) => <TeamCell row={cell.data} />} />
+            )}
             <Column dataField="platform" caption="平台" width={76} />
             <Column dataField="current" caption="本周期" dataType="number" format="#,##0" width={86} />
             <Column dataField="previous" caption="上周期" dataType="number" format="#,##0" width={86} />

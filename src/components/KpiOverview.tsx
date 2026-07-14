@@ -1,4 +1,4 @@
-import { Activity, ArrowDownRight, ArrowUpRight, FileText, MessageCircle, Minus, Target, Users } from "lucide-react";
+import { Activity, ArrowDownRight, ArrowUpRight, FileText, MessageCircle, Minus, Users } from "lucide-react";
 import type { DashboardModel, KpiCardModel } from "../lib/metrics";
 import { formatCompactNumber, formatNumber, formatPercent, formatPlainPercent } from "../lib/format";
 
@@ -7,7 +7,6 @@ const iconMap = {
   content: FileText,
   engagement: MessageCircle,
   active: Activity,
-  kpi: Target,
 };
 
 function renderValue(card: KpiCardModel) {

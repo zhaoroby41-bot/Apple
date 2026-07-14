@@ -15,11 +15,9 @@ const platforms = [
 ];
 
 const periods = [
-  { value: "7d", label: "7天" },
-  { value: "15d", label: "15天" },
   { value: "30d", label: "30天" },
-  { value: "3m", label: "3个月" },
-  { value: "6m", label: "6个月" },
+  { value: "60d", label: "60天" },
+  { value: "180d", label: "180天" },
   { value: "1y", label: "1年" },
 ];
 
