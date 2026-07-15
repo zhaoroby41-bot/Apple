@@ -890,7 +890,7 @@ h1 {
 
 .activity-bar-row {
   display: grid;
-  grid-template-columns: minmax(120px, 1fr) minmax(160px, 240px);
+  grid-template-columns: minmax(120px, 1fr) minmax(360px, 460px);
   gap: 10px;
   align-items: center;
   min-height: 24px;
@@ -927,6 +927,39 @@ h1 {
 
 .activity-bar-segment-inactive {
   background: #a1a1a6;
+}
+
+.activity-bar-info {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+}
+
+.activity-bar-counts {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 6px;
+  align-items: center;
+}
+
+.activity-bar-count {
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.activity-bar-count-active {
+  color: #5f8f86;
+}
+
+.activity-bar-count-low {
+  color: #a8793a;
+}
+
+.activity-bar-count-inactive {
+  color: #7c7c84;
 }
 
 .activity-bar-name {
@@ -1572,6 +1605,15 @@ h1 {
 
   .activity-bar-name {
     font-size: 11px;
+  }
+
+  .activity-bar-info {
+    flex-wrap: wrap;
+    gap: 5px 8px;
+  }
+
+  .activity-bar-counts {
+    flex-wrap: wrap;
   }
 
   .org-scope-panel {

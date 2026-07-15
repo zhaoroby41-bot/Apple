@@ -45,7 +45,7 @@ export default function App() {
         </div>
       </section>
       <nav className="page-tabs" aria-label="Dashboard pages">
-        <button type="button" className={page === "overview" ? "active" : ""} onClick={() => setPage("overview")}>运营总览</button>
+        <button type="button" className={page === "overview" ? "active" : ""} onClick={() => setPage("overview")}>运营数据看板</button>
         <button type="button" className={page === "kpi" ? "active" : ""} onClick={() => setPage("kpi")}>季度 KPI 报表</button>
       </nav>
       {page === "overview" ? <FilterBar dataset={mockDataset} filters={filters} onChange={setFilters} /> : null}

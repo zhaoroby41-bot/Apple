@@ -39,7 +39,14 @@ export function ActiveAccountsSection({ model }: { model: DashboardModel }) {
                       <span className="activity-bar-segment activity-bar-segment-inactive" style={{ width: inactiveWidth }} />
                     </div>
                   </div>
-                  <span className="activity-bar-name">{row.dealer}</span>
+                  <span className="activity-bar-info">
+                    <span className="activity-bar-counts">
+                      <span className="activity-bar-count activity-bar-count-active">活跃 {row.active}</span>
+                      <span className="activity-bar-count activity-bar-count-low">低活跃 {row.lowActive}</span>
+                      <span className="activity-bar-count activity-bar-count-inactive">未活跃 {row.inactive}</span>
+                    </span>
+                    <span className="activity-bar-name">{row.dealer}</span>
+                  </span>
                 </div>
               );
             })}
