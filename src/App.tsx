@@ -73,6 +73,8 @@ export default function App() {
               onPlatformChange={(platform) => setFilters({ ...filters, platform, dealerId: "all", regionId: "all", accountId: "all", scopeNodeIds: ["root:all"] })}
               quarter={kpiQuarter}
               onQuarterChange={setKpiQuarter}
+              filters={filters}
+              engagementMetric={engagementMetric}
             />
           )}
         </div>

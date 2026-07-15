@@ -23,9 +23,10 @@ import {
   type DealerGroupSetting,
   type KpiTargetSetting,
 } from "../lib/kpiConfig";
+import { buildDealerKpiHistoryRows, isSingleDealerKpiView } from "../lib/kpiHistory";
 import type { DashboardModel, KpiRow } from "../lib/metrics";
 import { formatNumber, formatPlainPercent } from "../lib/format";
-import type { MockDataset, Platform, QuarterKey } from "../types";
+import type { DashboardFilters, EngagementMetricKey, MockDataset, Platform, QuarterKey } from "../types";
 
 const quarterOptions: Array<{ value: QuarterKey; label: string }> = [
   { value: "2026Q3", label: "2026 Q3" },
@@ -78,20 +79,28 @@ function ProgressCell({ value }: { value: number }) {
   );
 }
 
+function SummaryProgress({ value }: { value: number }) {
+  const fill = `${Math.min(100, Math.max(0, value * 100))}%`;
+  return (
+    <span className="summary-progress" style={{ "--completion-fill": fill } as CSSProperties}>
+      <b>{formatPlainPercent(value)}</b>
+      <i aria-hidden="true" />
+    </span>
+  );
+}
+
 function QuarterDeltaCell({ value }: { value: number }) {
   const tone = value >= 0 ? "positive" : "negative";
   return <span className={`quarter-delta quarter-delta-${tone}`}>{value >= 0 ? "+" : ""}{formatPlainPercent(value)}</span>;
 }
 
-function MetricSummaryLine({ label, current, target, previousQuarter }: { label: string; current: number; target: number; previousQuarter: number }) {
+function MetricSummaryLine({ label, current, target }: { label: string; current: number; target: number }) {
   const completion = target === 0 ? 0 : current / target;
-  const quarterPercent = previousQuarter === 0 ? 0 : (current - previousQuarter) / previousQuarter;
   return (
-    <p className={`summary-completion summary-completion-${completionTone(completion)}`}>
+    <p className={`summary-completion summary-completion-${completionTone(completion)}`} aria-label={`${label}完成率 ${formatPlainPercent(completion)}`}>
       <span>{label}</span>
-      <strong>{formatPlainPercent(completion)}</strong>
-      <QuarterDeltaCell value={quarterPercent} />
       <small>{formatNumber(current)} / {formatNumber(target)}</small>
+      <SummaryProgress value={completion} />
     </p>
   );
 }
@@ -131,14 +140,6 @@ function groupSummary(rows: KpiRow[]) {
       new Map(),
     )
     .values();
-}
-
-function averageCompletion(item: KpiGroupSummary) {
-  return (
-    (item.readsTarget === 0 ? 0 : item.readsCurrent / item.readsTarget) +
-    (item.engagementTarget === 0 ? 0 : item.engagementCurrent / item.engagementTarget) +
-    (item.newFansTarget === 0 ? 0 : item.newFansCurrent / item.newFansTarget)
-  ) / 3;
 }
 
 function totalSummary(rows: KpiRow[]): KpiTotalSummary {
@@ -216,6 +217,8 @@ export function KpiManagementSection({
   onPlatformChange,
   quarter,
   onQuarterChange,
+  filters,
+  engagementMetric,
 }: {
   dataset: MockDataset;
   model: DashboardModel;
@@ -223,6 +226,8 @@ export function KpiManagementSection({
   onPlatformChange: (platform: Platform) => void;
   quarter: QuarterKey;
   onQuarterChange: (quarter: QuarterKey) => void;
+  filters: DashboardFilters;
+  engagementMetric: EngagementMetricKey;
 }) {
   const [showSettings, setShowSettings] = useState(false);
   const [targets, setTargets] = useState<KpiTargetSetting[]>(initialKpiTargets);
@@ -245,6 +250,12 @@ export function KpiManagementSection({
   const summaries = Array.from(groupSummary(model.kpiRows)).sort((a, b) => groupOrder.indexOf(a.group) - groupOrder.indexOf(b.group));
   const totals = totalSummary(model.kpiRows);
   const targetCaption = `${model.kpiQuarterLabel} KPI`;
+  const isDealerHistoryView = isSingleDealerKpiView(model.kpiRows);
+  const dealerHistoryRows = useMemo(
+    () => (isDealerHistoryView ? buildDealerKpiHistoryRows(dataset, filters, engagementMetric, quarterOptions.map((item) => item.value)) : []),
+    [dataset, engagementMetric, filters, isDealerHistoryView],
+  );
+  const selectedDealerName = model.kpiRows[0]?.dealer;
 
   function addTarget(source: "新增" | "导入") {
     const group = dealerGroups.find((item) => item.id === targetDraft.groupId) ?? dealerGroups[0];
@@ -408,29 +419,71 @@ export function KpiManagementSection({
         </div>
       ) : null}
 
-      <div className="kpi-completion-overview" aria-label="KPI completion overview">
+      {!isDealerHistoryView ? (
+        <div className="kpi-completion-overview" aria-label="KPI completion overview">
         <TotalCompletionCard label="阅读完成率" current={totals.readsCurrent} target={totals.readsTarget} previousQuarter={totals.readsPreviousQuarter} description={`${model.kpiQuarterLabel} 阅读/播放 / 阅读 KPI`} />
         <TotalCompletionCard label="互动完成率" current={totals.engagementCurrent} target={totals.engagementTarget} previousQuarter={totals.engagementPreviousQuarter} description={`${model.kpiQuarterLabel} 互动 / 互动 KPI`} />
         <TotalCompletionCard label="新增粉丝完成率" current={totals.newFansCurrent} target={totals.newFansTarget} previousQuarter={totals.newFansPreviousQuarter} description={`${model.kpiQuarterLabel} 新增粉丝 / 新增粉丝 KPI`} />
       </div>
 
-      <div className="kpi-report-summary" aria-label="KPI group summary">
+      ) : null}
+
+      {!isDealerHistoryView ? (
+        <div className="kpi-report-summary" aria-label="KPI group summary">
         {summaries.map((item) => (
           <article key={item.group}>
             <div>
               <span>{item.group}</span>
-              <strong>{formatPlainPercent(averageCompletion(item))}</strong>
             </div>
             <small>{item.dealers} 家经销商</small>
-            <MetricSummaryLine label="阅读" current={item.readsCurrent} target={item.readsTarget} previousQuarter={item.readsPreviousQuarter} />
-            <MetricSummaryLine label="互动" current={item.engagementCurrent} target={item.engagementTarget} previousQuarter={item.engagementPreviousQuarter} />
-            <MetricSummaryLine label="新增粉丝" current={item.newFansCurrent} target={item.newFansTarget} previousQuarter={item.newFansPreviousQuarter} />
+            <MetricSummaryLine label="阅读" current={item.readsCurrent} target={item.readsTarget} />
+            <MetricSummaryLine label="互动" current={item.engagementCurrent} target={item.engagementTarget} />
+            <MetricSummaryLine label="新增粉丝" current={item.newFansCurrent} target={item.newFansTarget} />
           </article>
         ))}
-      </div>
+        </div>
+
+      ) : null}
 
       <article className="panel table-panel full-width-table kpi-report-panel">
-        <DataGrid dataSource={model.kpiRows} keyExpr="id" showBorders={false} columnAutoWidth rowAlternationEnabled height={760}>
+        {isDealerHistoryView ? (
+          <>
+            <div className="dealer-history-heading">
+              <span>单经销商 KPI 历史</span>
+              <strong>{selectedDealerName}</strong>
+            </div>
+            <DataGrid dataSource={dealerHistoryRows} keyExpr="id" showBorders={false} columnAutoWidth rowAlternationEnabled height={360}>
+              <Sorting mode="multiple" />
+              <Scrolling mode="standard" showScrollbar="always" useNative={false} />
+              <Paging enabled={false} />
+              <Column dataField="quarter" caption="季度" width={96} sortOrder="desc" />
+              <Column dataField="dealer" caption="经销商账号" minWidth={180} fixed />
+              <Column dataField="accountCount" caption="覆盖账号数" width={96} alignment="right" />
+              <Column caption="阅读/播放">
+                <Column dataField="readsTarget" caption="KPI" dataType="number" format="#,##0" width={118} />
+                <Column dataField="readsCurrent" caption="当前完成" dataType="number" format="#,##0" width={118} />
+                <Column dataField="readsPreviousQuarter" caption="上季度同期" dataType="number" format="#,##0" width={110} />
+                <Column dataField="readsQuarterPercent" caption="季度环比" cellRender={(cell) => <QuarterDeltaCell value={cell.value} />} width={96} />
+                <Column dataField="readsCompletion" caption="完成率" cellRender={(cell) => <ProgressCell value={cell.value} />} width={174} />
+              </Column>
+              <Column caption="互动量">
+                <Column dataField="engagementTarget" caption="KPI" dataType="number" format="#,##0" width={112} />
+                <Column dataField="engagementCurrent" caption="当前完成" dataType="number" format="#,##0" width={112} />
+                <Column dataField="engagementPreviousQuarter" caption="上季度同期" dataType="number" format="#,##0" width={104} />
+                <Column dataField="engagementQuarterPercent" caption="季度环比" cellRender={(cell) => <QuarterDeltaCell value={cell.value} />} width={96} />
+                <Column dataField="engagementCompletion" caption="完成率" cellRender={(cell) => <ProgressCell value={cell.value} />} width={174} />
+              </Column>
+              <Column caption="新增粉丝" minWidth={520}>
+                <Column dataField="newFansTarget" caption="KPI" dataType="number" format="#,##0" width={112} />
+                <Column dataField="newFansCurrent" caption="当前完成" dataType="number" format="#,##0" width={112} />
+                <Column dataField="newFansPreviousQuarter" caption="上季度同期" dataType="number" format="#,##0" width={104} />
+                <Column dataField="newFansQuarterPercent" caption="季度环比" cellRender={(cell) => <QuarterDeltaCell value={cell.value} />} width={96} />
+                <Column dataField="newFansCompletion" caption="完成率" cellRender={(cell) => <ProgressCell value={cell.value} />} width={174} />
+              </Column>
+            </DataGrid>
+          </>
+        ) : (
+          <DataGrid dataSource={model.kpiRows} keyExpr="id" showBorders={false} columnAutoWidth rowAlternationEnabled height={760}>
           <SearchPanel visible placeholder="搜索分组 / 经销商账号" />
           <GroupPanel visible />
           <Grouping autoExpandAll texts={{ groupContinuedMessage: "", groupContinuesMessage: "" }} />
@@ -477,7 +530,8 @@ export function KpiManagementSection({
             <TotalItem column="newFansCurrent" summaryType="sum" valueFormat="#,##0" displayFormat="{0}" />
             <TotalItem column="newFansPreviousQuarter" summaryType="sum" valueFormat="#,##0" displayFormat="{0}" />
           </Summary>
-        </DataGrid>
+          </DataGrid>
+        )}
         <p className="table-note">目标列对应 {model.kpiQuarterLabel} 的季度 KPI，当前完成列对应所选季度统计区间内的累计表现；平台筛选会同步影响下方报表内容。</p>
       </article>
     </section>

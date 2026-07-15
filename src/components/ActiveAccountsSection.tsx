@@ -1,20 +1,13 @@
-import Chart, { ArgumentAxis, CommonSeriesSettings, Grid, Legend, Series, Tooltip, ValueAxis } from "devextreme-react/chart";
 import DataGrid, { Column, Paging, SearchPanel, Sorting } from "devextreme-react/data-grid";
 import type { DashboardModel } from "../lib/metrics";
 
-interface ActivityTooltipPoint {
-  argumentText: string;
-  point?: {
-    data?: {
-      dealer: string;
-      active: number;
-      lowActive: number;
-      inactive: number;
-    };
-  };
+function getActivityTotal(row: DashboardModel["activeDistribution"][number]) {
+  return row.active + row.lowActive + row.inactive;
 }
 
 export function ActiveAccountsSection({ model }: { model: DashboardModel }) {
+  const maxActivityTotal = Math.max(1, ...model.activeDistribution.map(getActivityTotal));
+
   return (
     <section className="analysis-section">
       <div className="section-heading">
@@ -26,28 +19,45 @@ export function ActiveAccountsSection({ model }: { model: DashboardModel }) {
       </div>
       <div className="analysis-grid">
         <article className="panel chart-panel">
-          <Chart dataSource={model.activeDistribution} palette={["#2f855a", "#b7791f", "#a1a1a6"]}>
-            <CommonSeriesSettings argumentField="key" type="stackedbar" />
-            <Series valueField="active" name="活跃" />
-            <Series valueField="lowActive" name="低活跃" />
-            <Series valueField="inactive" name="未活跃" />
-            <ArgumentAxis argumentType="string" />
-            <ValueAxis>
-              <Grid visible />
-            </ValueAxis>
-            <Tooltip
-              enabled
-              customizeTooltip={(point: ActivityTooltipPoint) => {
-                const data = point.point?.data;
-                return {
-                  text: data
-                    ? `${data.dealer}<br/>活跃：${data.active}<br/>低活跃：${data.lowActive}<br/>未活跃：${data.inactive}`
-                    : point.argumentText,
-                };
-              }}
-            />
-            <Legend verticalAlignment="bottom" horizontalAlignment="center" />
-          </Chart>
+          <div className="activity-bar-chart" aria-label="活跃账号横向分布">
+            {model.activeDistribution.map((row) => {
+              const total = getActivityTotal(row);
+              const totalWidth = `${Math.max(4, (total / maxActivityTotal) * 100)}%`;
+              const activeWidth = `${total === 0 ? 0 : (row.active / total) * 100}%`;
+              const lowActiveWidth = `${total === 0 ? 0 : (row.lowActive / total) * 100}%`;
+              const inactiveWidth = `${total === 0 ? 0 : (row.inactive / total) * 100}%`;
+
+              return (
+                <div className="activity-bar-row" key={row.key}>
+                  <div
+                    className="activity-bar-track"
+                    title={`${row.dealer}: 活跃 ${row.active}, 低活跃 ${row.lowActive}, 未活跃 ${row.inactive}`}
+                  >
+                    <div className="activity-bar-stack" style={{ width: totalWidth }}>
+                      <span className="activity-bar-segment activity-bar-segment-active" style={{ width: activeWidth }} />
+                      <span className="activity-bar-segment activity-bar-segment-low" style={{ width: lowActiveWidth }} />
+                      <span className="activity-bar-segment activity-bar-segment-inactive" style={{ width: inactiveWidth }} />
+                    </div>
+                  </div>
+                  <span className="activity-bar-name">{row.dealer}</span>
+                </div>
+              );
+            })}
+          </div>
+          <div className="activity-bar-legend" aria-label="活跃状态图例">
+            <span>
+              <i className="activity-bar-segment-active" />
+              活跃
+            </span>
+            <span>
+              <i className="activity-bar-segment-low" />
+              低活跃
+            </span>
+            <span>
+              <i className="activity-bar-segment-inactive" />
+              未活跃
+            </span>
+          </div>
         </article>
         <article className="panel table-panel">
           <div className="panel-title">
